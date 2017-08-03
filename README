@@ -1,0 +1,96 @@
+OVERVIEW
+========
+
+This program is a nfq-based traffic filter. The filtering
+occur on the basis of list entries which must be blocked or accepted.
+
+CONFIG
+======
+
+The current config file format is considered as temporary. To see
+how it must look in the future open file conf_future.
+
+Each line of config file contain an entries list file declaration in
+the next format:
+
+list FILE_NAME ACTION_ON_MATCH MARK_ON_MATCH
+
+FILE_NAME - is a file, which contain a list entries
+ACTION_ON_MATCH - NFQUEUE verdict to set on a packet if it's matched some
+                  entry in this list. One of: accept, repeat or drop.
+MARK_ON_MATCH - mark set on a packet if it's matched some entry in this
+                list. Any interger values from 0 to (2^32 - 1).
+
+Mark on drop action is useless, but must be specified to satisfy the format.
+
+Each line of an entries list file contain an entry declaration in
+the CSV format(with ":" as field delimiter, "'" as quote char) with
+next fields:
+
+FILTER_NAME:FILTER_DATA
+
+Now we have the next filters: f_ipsrv, f_domain, f_domaintree, f_uri.
+f_ipsrv blocks packets based on ip address, proto number and protocol
+port number. f_domain blocks packets based on domain name.
+f_domaintree blocks packets based on domain name(blocks specified name
+and all it subdomains). f_uri blocks packets based on uri.
+Filters entry format:
+
+f_ipsrv:
+
+ip-srv:IP[:PROTO[:PROTO_DATA]]
+
+  where PROTO_DATA:
+
+  for PROTO=1 (icmp):
+  
+  TYPE[:CODE]
+  
+  for PROTO=6 (tcp):
+  
+  PORT
+  
+  for PROTO=17 (udp):
+  
+  PORT
+
+f_domain:
+
+domain:DOMAIN_NAME
+
+f_domaintree:
+
+domain-tree:DOMAIN_NAME
+
+f_uri:
+
+uri:URI
+
+Example config can be seen in conf_example file.
+
+ARCHITECTURE
+============
+
+trfl on startup run a supervisor which restart a program when it
+crashed(unless a situation when it crashed on config error).
+
+trfl do a live config reloading on receiving SIGUSR1 signal.
+
+BUILDING
+========
+
+make clean && make DEBUG=1
+
+USING
+=====
+
+Place something like this in iptables:
+
+iptables -t nat -A PREROUTING -i eth0 -j NFQUEUE --queue-balance 0:2
+iptables -A FORWARD -p tcp -m tcp -m mark --mark 1 -j REJECT --reject-with tcp-reset
+iptables -A FORWARD -m mark --mark 1 -j REJECT --reject-with icmp-port-unreachable
+
+Use conf_example. Start trfl:
+
+./trfl -q 0:2 conf_example
+
