@@ -1,0 +1,18 @@
+list uri FILE
+list _domain FILE
+list domain FILE
+list ip FILE
+
+192.168.0.0/24 {
+	_domain accept
+	uri drop
+	domain repeat 1
+	ip repeat 1
+	accept
+}
+192.168.100.192/24 {
+	uri repeat 1
+	domain repeat 1
+	ip repeat 1
+	accept
+}

@@ -1,0 +1,27 @@
+OVERVIEW
+========
+
+This tool is used to download RosKomNadzor register and convert it
+to trfl list format.
+
+INSTALLATION
+============
+
+Copy this directory somewhere.
+Perl libs you need:
+
+Text::CSV
+SOAP::Lite
+XML::Parser
+
+USING
+=====
+
+Edit rknr_get.sh to fit your configuration. This script execute
+rknr_get.pl with needed options to download a register and convert it,
+and after that send a signal to trfl to reload a config.
+
+As soon as needed changes are applied place a line in cron for
+executing rknr_get.sh.
+
+To convert existent xml file without downloading it, use -i option.
