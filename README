@@ -68,13 +68,40 @@ uri:URI
 
 Example config can be seen in conf_example file.
 
+FEATURES
+========
+
+- libnetfilter_queue based userspace filter;
+- multithreading (one thread for each nfqueue);
+- blocking occur on the basis of lists of entries to block/accept;
+- list entries are arranged in avl-tree structures;
+- support blocking by: ip address, ip protocol, icmp type, icmp code,
+  tcp dest port, udp dest port, domain name, domain name and all it subdomains,
+  uri;
+- retrieve domain name from: http-request, dns-request, https-request;
+- retrieve uri from: http-request;
+- support a live config reloading(reloading config without stopping of
+  a service);
+- has a supervisor, which restarts the program when it crashed;
+- has a mudular architecture.
+
 ARCHITECTURE
 ============
+
+trfl do a live config reloading on receiving SIGUSR1 signal.
 
 trfl on startup run a supervisor which restart a program when it
 crashed(unless a situation when it crashed on config error).
 
-trfl do a live config reloading on receiving SIGUSR1 signal.
+After this, supervisor run a main process, which spawn a thread for
+each nfqueue.
+
+Then the main thread wait for SIGUSR1 to reload the config. Others
+threads do actual packet parsing and filtering.
+
+During packet parsing, needed info for filters, like domain names and URIs,
+are collected. After this, a packet with collected info is passed to filters
+where it is compared to filters entries.
 
 BUILDING
 ========
