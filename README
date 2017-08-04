@@ -119,5 +119,5 @@ iptables -A FORWARD -m mark --mark 1 -j REJECT --reject-with icmp-port-unreachab
 
 Use conf_example. Start trfl:
 
-./trfl -q 0:2 conf_example
+./trfl -q 0:2 -p /va/run/trfl.pid conf_example
 
