@@ -499,18 +499,18 @@ sub main
 		if ((!defined($opt_sig)) || ($opt_sig eq "")) {
 			die("A file error: a signature file is not specified");
 		}
+		unless (open($dh, "<", $opt_req)) {
+			die("A request file error: $!");
+		}
+		close($dh);
+		unless (open($dh, "<", $opt_sig)) {
+			die("A signature file error: $!");
+		}
+		close($dh);
 	}
 	if ((!defined($opt_out)) || ($opt_out eq "")) {
 		die("A file error: an output file is not specified");
 	}
-	unless (open($dh, "<", $opt_req)) {
-		die("A request file error: $!");
-	}
-	close($dh);
-	unless (open($dh, "<", $opt_sig)) {
-		die("A signature file error: $!");
-	}
-	close($dh);
 	
 	if ($opt_in) {
 		$files = [ $opt_in ];
