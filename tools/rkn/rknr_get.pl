@@ -171,22 +171,34 @@ sub output_help
 	  " -i, --input=FILE     input xml file(do not load it from RKN site)\n".
 	  " -o, --output=FILE     output file\n".
 	  " -r, --request=FILE	  request file\n".
-	  " -s, --signature=FILE  signature file\n");
+	  " -s, --signature=FILE  signature file\n".
+	  " -v, --version         show program version\n");
+}
+
+sub output_version
+{
+	print("rknr_get.pl 0-1.0\n");
 }
 
 sub proc_opts
 {
-	my $opt_h;
+	my ($opt_h, $opt_v);
 
 
 	GetOptions('request|req|r=s' => \$opt_req,
 	  'input|i=s' => \$opt_in,
 	  'output|o=s' => \$opt_out,
 	  'signature|sig|s=s' => \$opt_sig,
-	  'help|h' => \$opt_h);
+	  'help|h' => \$opt_h,
+	  'version|v' => \$opt_v);
 
 	if ( $opt_h ) {
 		output_help();
+		exit(0);
+	}
+	
+	if ($opt_v) {
+		output_version();
 		exit(0);
 	}
 }
