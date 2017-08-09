@@ -309,11 +309,11 @@ sub block_entry
 			block_entry_by_ipprefs($entry);
 		} else {
 			syslog(LOG_ERR, "blockType is %s but no ip or ipSubnet entry ".
-			  "is found", $entry->{__attrs}{blockType});
+			  "is found: %s", $entry->{__attrs}{blockType}, Dumper($entry));
 		}
 	} else {
-		syslog(LOG_ERR, "unknown blockType: %s",
-		  $entry->{__attrs}{blockType});
+		syslog(LOG_ERR, "unknown blockType: %s: %s",
+		  $entry->{__attrs}{blockType}, Dumper($entry));
 		return;
 	}
 }
@@ -329,8 +329,8 @@ sub block_entry_by_uris
 	} elsif (ref($entry->{url}) eq "HASH") {
 		$array = [$entry->{url}];
 	} else {
-		syslog(LOG_ERR, "url key unknown type: %s",
-		  ref($entry->{url}));
+		syslog(LOG_ERR, "url key unknown type: %s: %s",
+		  ref($entry->{url}), Dumper($entry));
 		return -1;
 	}
 	
@@ -392,8 +392,8 @@ sub block_entry_by_domains
 	} elsif (ref($entry->{domain}) eq "HASH") {
 		$array = [$entry->{domain}];
 	} else {
-		syslog(LOG_ERR, "domain key unknown type: %s",
-		  ref($entry->{domain}));
+		syslog(LOG_ERR, "domain key unknown type: %s: %s",
+		  ref($entry->{domain}), Dumper($entry));
 		return -1;
 	}
 	
@@ -418,8 +418,8 @@ sub block_entry_by_domainmasks
 	} elsif (ref($entry->{domain}) eq "HASH") {
 		$array = [$entry->{domain}];
 	} else {
-		syslog(LOG_ERR, "domain key unknown type: %s",
-		  ref($entry->{domain}));
+		syslog(LOG_ERR, "domain key unknown type: %s: %s",
+		  ref($entry->{domain}), Dumper($entry));
 		return -1;
 	}
 	
@@ -450,8 +450,8 @@ sub block_entry_by_ips
 	} elsif (ref($entry->{ip}) eq "HASH") {
 		$array = [$entry->{ip}];
 	} else {
-		syslog(LOG_ERR, "ip key unknown type: %s",
-		  ref($entry->{ip}));
+		syslog(LOG_ERR, "ip key unknown type: %s: %s",
+		  ref($entry->{ip}), Dumper($entry));
 		return -1;
 	}
 	
@@ -475,8 +475,8 @@ sub block_entry_by_ipprefs
 	} elsif (ref($entry->{ipSubnet}) eq "HASH") {
 		$array = [$entry->{ipSubnet}];
 	} else {
-		syslog(LOG_ERR, "ipSubnet key unknown type: %s",
-		  ref($entry->{ipSubnet}));
+		syslog(LOG_ERR, "ipSubnet key unknown type: %s: %s",
+		  ref($entry->{ipSubnet}), Dumper($entry));
 		return -1;
 	}
 	
