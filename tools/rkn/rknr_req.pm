@@ -19,7 +19,8 @@ sub new
     $self->_read_req($p{req});
     $self->_read_sig($p{sig});
 	eval {
-		$self->{_soap} = SOAP::Lite->service($p{wsdl});
+		$self->{_soap} = SOAP::Lite->new(proxy => $p{soap_uri},
+		  ns => $p{soap_ns});
 	};
 	if ($@) {
 		die("rknr_req: soap exception: ".$@);
@@ -70,24 +71,34 @@ sub _read_sig
 sub send_req
 {
 	my $self = shift;
-	my @resp;
+	my $resp;
 	my $soap = $self->{_soap};
 
 
 	syslog(LOG_INFO, "send a request");
 	eval {
-		@resp = $soap->sendRequest($self->{_req}, $self->{_sig}, "2.0");
+		$resp = $soap->call("sendRequest",
+		  SOAP::Data->name("requestFile" => $self->{_req})->type("base64Binary"),
+		  SOAP::Data->name("signatureFile" => $self->{_sig})->type("base64Binary"),
+		  SOAP::Data->name("dumpFormatVersion" => "2.0")->type("string"));
 	};
 	if ($@) {
 		die("rknr_req: soap exception: ".$@);
 	}
-
-	if ($resp[0] ne 'true') {
-		die("rknr_req: soap error: ".$resp[1]);
+	if ($resp->fault()) {
+		die("soap error: ".$resp->faultcode().": ".$resp->faultstring().
+		  "(".$resp->faultdetail().")");
 	}
-	syslog(LOG_INFO, "request is sent(".$resp[2].")");
+	$resp = $resp->body()->{sendRequestResponse};
+	if (!defined($resp)) {
+		die("response is empty!");
+	}
+	if ($resp->{result} ne 'true') {
+		die("rknr_req: soap error: ".$resp->{resultComment});
+	}
+	syslog(LOG_INFO, "request is sent(".$resp->{code}.")");
 
-	return $resp[2];
+	return $resp->{code};
 }
 
 sub get_result
@@ -96,9 +107,8 @@ sub get_result
 	my ($code) = @_;
 	my $ret = 0;
 	my $ret_msg = "";
-	my @resp;
+	my $resp;
 	my $soap = $self->{_soap};
-	my $empty_cnt = 0;
 	my $iter = 0;
 	my $delay = 0;
 
@@ -112,20 +122,21 @@ sub get_result
 		$delay = 60 if ($delay > 300);
 		sleep($delay);
 		
-		@resp = $soap->getResult($code);
-		if (!@resp) {
-			syslog(LOG_ERR, "response is empty!");
-			$empty_cnt++;
-			if ($empty_cnt > 2) {
-				$ret = "too_many_empty";
-				last;
-			}
+		$resp = $soap->call("getResult",
+		  SOAP::Data->name("code" => $code));
+		if ($resp->fault()) {
+			die("soap error: ".$resp->faultcode().": ".$resp->faultstring().
+			  "(".$resp->faultdetail().")");
 		}
-		if ($resp[0] eq "true") {
-			$ret = $resp[2];
-		} elsif ($resp[0] eq "false") {
-			$ret = $resp[2];
-			$ret_msg = $resp[1];
+		$resp = $resp->body()->{getResultResponse};
+		if (!defined($resp)) {
+			die("response is empty!");
+		}
+		if ($resp->{result} eq "true") {
+			$ret = $resp->{resultCode};
+		} elsif ($resp->{result} eq "false") {
+			$ret = $resp->{resultCode};
+			$ret_msg = $resp->{resultComment};
 		}
 		$iter++;
 		if ($iter > 100) {
@@ -144,7 +155,7 @@ sub get_result
 	}
 	syslog(LOG_INFO, "result is got(on $iter iteration)");
 	
-	return decode_base64($resp[1]);
+	return decode_base64($resp->{registerZipArchive});
 }
 
 sub get_data

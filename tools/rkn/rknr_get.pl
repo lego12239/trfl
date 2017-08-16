@@ -12,7 +12,8 @@ use Data::Dumper;
 
 
 use constant {
-	WSDL => "http://vigruzki.rkn.gov.ru/services/OperatorRequest/?wsdl",
+	SOAP_URI => "http://vigruzki.rkn.gov.ru/services/OperatorRequest/",
+	SOAP_NS => "http://vigruzki.rkn.gov.ru/OperatorRequest/",
 	TMPDIR => "tmp",
 	BACKUPDIR => "backup",
 	SYSLOG_FACILITY => LOG_LOCAL7,
@@ -527,7 +528,8 @@ sub main
 	if ($opt_in) {
 		$files = [ $opt_in ];
 	} else {
-		$req = new rknr_req(wsdl => WSDL, req => $opt_req, sig => $opt_sig);
+		$req = new rknr_req(soap_uri => SOAP_URI, soap_ns => SOAP_NS,
+		  req => $opt_req, sig => $opt_sig);
 		syslog(LOG_INFO, "unpack the archive...");
 		$files = get_file_from_zip($req->get_data(), TMPDIR."/data.zip");
 		syslog(LOG_INFO, "archive is unpacked");
