@@ -122,8 +122,13 @@ sub get_result
 		$delay = 60 if ($delay > 300);
 		sleep($delay);
 		
-		$resp = $soap->call("getResult",
-		  SOAP::Data->name("code" => $code));
+		eval {
+			$resp = $soap->call("getResult",
+			  SOAP::Data->name("code" => $code));
+		};
+		if ($@) {
+			die("rknr_req: soap exception: ".$@);
+		}
 		if ($resp->fault()) {
 			die("soap error: ".$resp->faultcode().": ".$resp->faultstring().
 			  "(".$resp->faultdetail().")");
