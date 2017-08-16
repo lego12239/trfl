@@ -80,7 +80,7 @@ sub send_req
 		$resp = $soap->call("sendRequest",
 		  SOAP::Data->name("requestFile" => $self->{_req})->type("base64Binary"),
 		  SOAP::Data->name("signatureFile" => $self->{_sig})->type("base64Binary"),
-		  SOAP::Data->name("dumpFormatVersion" => "2.0")->type("string"));
+		  SOAP::Data->name("dumpFormatVersion" => "2.2")->type("string"));
 	};
 	if ($@) {
 		die("rknr_req: soap exception: ".$@);
