@@ -110,17 +110,14 @@ sub get_result
 	my $resp;
 	my $soap = $self->{_soap};
 	my $iter = 0;
-	my $delay = 0;
+	my $delay = 20;
 
 
 	syslog(LOG_INFO, "get a result");
 
+	sleep(90);
 	while ($ret == 0) {
 		syslog(LOG_INFO, ($iter+1)." try...");
-		
-		$delay += 60;
-		$delay = 60 if ($delay > 300);
-		sleep($delay);
 		
 		eval {
 			$resp = $soap->call("getResult",
@@ -148,6 +145,10 @@ sub get_result
 			$ret = "too_many_retries";
 			last;
 		}
+
+		$delay += 5;
+		$delay = 25 if ($delay > 300);
+		sleep($delay);
 	}
 	if ($ret != 1) {
 		if ($ret eq "too_many_empty") {
