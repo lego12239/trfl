@@ -11,16 +11,14 @@ use Cwd;
 use Data::Dumper;
 
 
-use constant {
-	SOAP_URI => "http://vigruzki.rkn.gov.ru/services/OperatorRequest/",
-	SOAP_NS => "http://vigruzki.rkn.gov.ru/OperatorRequest/",
-	TMPDIR => "tmp",
-	BACKUPDIR => "backup",
-	VARDIR => "var",
-	MAX_DOWNLOAD_INTERVAL => 1000 * 3600 * 6,  # in milliseconds
-	SYSLOG_FACILITY => LOG_LOCAL7,
-};
-
+my $conf = {
+	SOAP_URI => undef,
+	SOAP_NS => undef,
+	TMPDIR => undef,
+	BACKUPDIR => undef,
+	VARDIR => undef,
+	MAX_DOWNLOAD_INTERVAL => undef,
+	SYSLOG_FACILITY => undef};
 my $time_last;
 my $ret;
 my $entry;
@@ -40,6 +38,54 @@ sub report_err
 
 	print(STDERR "error: ".$msg."\n");
 	syslog(LOG_ERR, "error: ".$msg);
+}
+
+sub conf_set
+{
+	my ($name, $val) = @_;
+	
+	$conf->{uc($name)} = $val;
+}
+
+sub conf_check
+{
+	my @prms;
+	my $prm;
+	
+	@prms = keys(%$conf);
+	foreach $prm (@prms) {
+		print("$prm = ".$conf->{$prm}."\n");
+		if (!defined($conf->{$prm})) {
+			die("conf parameter ".$prm." is not supplied");
+		}
+	}
+}
+
+sub conf_load
+{
+	my ($fname) = @_;
+	my @prms;
+	my $prm;
+	my $fh;
+	my $line;
+	
+	unless (open($fh, "<", $fname)) {
+		die("can't open conf file: ".$!);
+	}
+	while (defined($line = <$fh>)) {
+		chomp($line);
+		next if ($line =~ /^\s*\#/o);
+		next if ($line =~ /^\s*$/o);
+		unless ($line =~ s/^\s*(\S+)\s*=\s*//o) {
+			die("conf format error in line: ".$line);
+		}
+		$prm = $1;
+		$line =~ s/^\"//o;
+		$line =~ s/\"\s*$//o;
+		conf_set($prm, $line);
+	}
+	close($fh);
+	conf_check();
 }
 
 sub db_add
@@ -169,7 +215,7 @@ sub fmt_uri
 
 sub output_help
 {
-	print("Usage: rknr_get.pl OPTIONS\n\n".
+	print("Usage: rknr_get.pl OPTIONS CONF_FILE\n\n".
 	  "Options:\n".
 	  " -i, --input=FILE     input xml file(do not load it from RKN site)\n".
 	  " -o, --output=FILE     output file\n".
@@ -212,7 +258,7 @@ sub get_file_from_zip
 	my $fh;
 	my @xmls;
 
-	unless (mkdir(TMPDIR)) {
+	unless (mkdir($conf->{TMPDIR})) {
 		if ($! != 17) {
 			die("Can't create a temp directory: ".$!);
 		}
@@ -223,9 +269,9 @@ sub get_file_from_zip
 	print($fh $data);
 	close($fh);
 
-	system("unzip -o $file '*.xml' -d ".TMPDIR);
+	system("unzip -o $file '*.xml' -d ".$conf->{TMPDIR});
 
-	@xmls = glob(TMPDIR."/*.xml"); 
+	@xmls = glob($conf->{TMPDIR}."/*.xml"); 
 	return \@xmls;
 }
 
@@ -261,7 +307,7 @@ sub postwork
 		}
 	}
 	close($fh_tf);
-	unless (mkdir(BACKUPDIR)) {
+	unless (mkdir($conf->{BACKUPDIR})) {
 		if ($! != 17) {
 			die("Can't create a backup directory: ".$!);
 		}
@@ -269,7 +315,7 @@ sub postwork
 	@types = localtime(time());
 	$postfix = sprintf(".%04d-%02d-%02dT%02d:%02d", 
 	  $types[5] + 1900, $types[4] + 1, $types[3], $types[2], $types[1]);
-	$type = BACKUPDIR."/tf_list".$postfix;
+	$type = $conf->{BACKUPDIR}."/tf_list".$postfix;
 	unless (rename($tf_list_path, $type)) {
 		die("Can't rename tf_list temp file to ".$type.": ".$!);
 	}
@@ -281,12 +327,12 @@ sub postwork
 	unless (symlink(getcwd()."/".$type, $opt_out)) {
 		die("Can't create tf_list symlink: ".$!);
 	}
-	@types = glob(TMPDIR."/*.xml");
+	@types = glob($conf->{TMPDIR}."/*.xml");
 	$i = 0;
 	foreach $type (@types) {
-		unless (rename($type, BACKUPDIR."/dump$i".$postfix)) {
+		unless (rename($type, $conf->{BACKUPDIR}."/dump$i".$postfix)) {
 			die("Can't rename dump xml file to ".
-			  BACKUPDIR."/dump$i".$postfix.": ".$!);
+			  $conf->{BACKUPDIR}."/dump$i".$postfix.": ".$!);
 		}
 		$i++;
 	}
@@ -510,17 +556,17 @@ sub get_time_last
 	my $fh;
 	my $time;
 	
-	unless (open($fh, "<", VARDIR."/time_last")) {
+	unless (open($fh, "<", $conf->{VARDIR}."/time_last")) {
 		if ($! == 2) {
 			return 0;
 		}
-		die("can't open ".VARDIR."/time_last: ".$!);
+		die("can't open ".$conf->{VARDIR}."/time_last: ".$!);
 	}
 	$time = <$fh>;
 	close($fh);
 
 	if ($time !~ /^[0-9]+$/o) {
-		unlink(VARDIR."/time_last");
+		unlink($conf->{VARDIR}."/time_last");
 		$time = 0;
 	}
 	return $time;
@@ -531,13 +577,13 @@ sub set_time_last
 	my ($time) = @_;
 	my $fh;
 	
-	unless (mkdir(VARDIR)) {
+	unless (mkdir($conf->{VARDIR})) {
 		if ($! != 17) {
 			die("Can't create a var directory: ".$!);
 		}
 	}
-	unless (open($fh, ">", VARDIR."/time_last")) {
-		die("can't open ".VARDIR."/time_last: ".$!);
+	unless (open($fh, ">", $conf->{VARDIR}."/time_last")) {
+		die("can't open ".$conf->{VARDIR}."/time_last: ".$!);
 	}
 	print($fh $time);
 	close($fh);
@@ -551,18 +597,18 @@ sub get_registry
 	my $time_reg;
 	my $time = time() * 1000;
 	
-	$req = new rknr_req(soap_uri => SOAP_URI, soap_ns => SOAP_NS,
-	  req => $opt_req, sig => $opt_sig);
+	$req = new rknr_req(soap_uri => $conf->{SOAP_URI},
+	  soap_ns => $conf->{SOAP_NS}, req => $opt_req, sig => $opt_sig);
 	$time_last = get_time_last();
 	$time_reg = $req->get_last_dump_date();
 	syslog(LOG_INFO, "last dump urgent time is ".$time_reg->{urgent}.
 	  "; loaded - ".$time_last);
 	if (($time_reg->{urgent} <= $time_last) &&
-	    (($time - $time_last) < MAX_DOWNLOAD_INTERVAL)) {
+	    (($time - $time_last) < $conf->{MAX_DOWNLOAD_INTERVAL})) {
 		return;
 	}
 	$time_last = $time_reg->{urgent};
-	if (($time - $time_last) >= MAX_DOWNLOAD_INTERVAL) {
+	if (($time - $time_last) >= $conf->{MAX_DOWNLOAD_INTERVAL}) {
 		syslog(LOG_INFO, "MAX_DOWNLOAD_INTERVAL is reached");
 		# Use 1800 seconds to be safe of time differencies
 		$time_last = $time - 1800 * 1000;
@@ -570,7 +616,7 @@ sub get_registry
 	syslog(LOG_INFO, "download the archive...");
 	$arch = $req->get_data();
 	syslog(LOG_INFO, "unpack the archive...");
-	$files = get_file_from_zip($arch, TMPDIR."/data.zip");
+	$files = get_file_from_zip($arch, $conf->{TMPDIR}."/data.zip");
 	syslog(LOG_INFO, "archive is unpacked");
 	
 	return $files;
@@ -632,10 +678,16 @@ sub main
 
 proc_opts();
 
-openlog("[rknr_get.pl]", "", SYSLOG_FACILITY);
-syslog(LOG_INFO, "started");
-
 eval {
+
+	if ((!defined($ARGV[0])) || ($ARGV[0] eq "")) {
+		die("configuration file must be specified!");
+	}
+	conf_load($ARGV[0]);
+
+	openlog("[rknr_get.pl]", "", $conf->{SYSLOG_FACILITY});
+	syslog(LOG_INFO, "started");
+
 	main();
 };
 if ($@) {

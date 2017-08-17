@@ -8,7 +8,7 @@ DIR=${0%/*}
 
 false
 while [[ $? -ne 0 ]]; do
-	ERRMSG=`./rknr_get.pl -o tf_list -r req.xml -s req.xml.sig 2>&1`
+	ERRMSG=`./rknr_get.pl -o tf_list -r req.xml -s req.xml.sig conf 2>&1`
 done
 
 kill -USR1 `cat /var/run/trfl.pid`

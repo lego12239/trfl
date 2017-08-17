@@ -1,0 +1,13 @@
+# Service address and namespace(can be gotten from wsdl file)
+soap_uri = "http://vigruzki.rkn.gov.ru/services/OperatorRequest/"
+soap_ns = "http://vigruzki.rkn.gov.ru/OperatorRequest/"
+# Directory to save zip file to
+tmpdir = "tmp"
+# Directory where previous dump and list files will be saved
+backupdir = "backup"
+# Directory for various work files(time_last and so on)
+vardir = "var"
+# 6 hours in milliseconds
+max_download_interval = 21600000
+syslog_facility = "local7"
+
