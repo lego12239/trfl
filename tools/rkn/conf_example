@@ -10,4 +10,9 @@ vardir = "var"
 # 6 hours in milliseconds
 max_download_interval = 21600000
 syslog_facility = "local7"
-
+# Fire specified binary on docs version change
+#DOCVERSION_ONCHANGE =
+# Fire specified binary on registry dump format change
+#FORMATVERSION_ONCHANGE = 
+# Fire specified binary on api version change
+#APIVERSION_ONCHANGE = 

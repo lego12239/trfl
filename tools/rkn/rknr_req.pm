@@ -174,11 +174,10 @@ sub get_data
 	return $self->get_result($code);
 }
 
-sub get_last_dump_date
+sub get_info
 {
 	my $self = shift;
 	my $soap = $self->{_soap};
-	my $time;
 	my $resp;
 	
 	syslog(LOG_INFO, "get a last dump time...");
@@ -196,13 +195,12 @@ sub get_last_dump_date
 	if (!defined($resp)) {
 		die("response is empty!");
 	}
-	syslog(LOG_INFO, "DOCVERSION - ".$resp->{docVersion});
-	syslog(LOG_INFO, "FORMATVERSION - ".$resp->{dumpFormatVersion});
-	syslog(LOG_INFO, "APIVERSION - ".$resp->{webServiceVersion});
-	$time = {
-		reg => $resp->{lastDumpDate},
-		urgent => $resp->{lastDumpDateUrgently}};
-	return $time;
+	return {
+		ut_reg => $resp->{lastDumpDate},
+		ut_urgent => $resp->{lastDumpDateUrgently},
+		ver_docs => $resp->{docVersion},
+		ver_regfmt => $resp->{dumpFormatVersion},
+		ver_api => $resp->{webServiceVersion}};
 }
 
 1;
