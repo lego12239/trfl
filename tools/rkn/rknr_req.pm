@@ -197,6 +197,7 @@ sub get_last_dump_date
 		die("response is empty!");
 	}
 	syslog(LOG_INFO, "DOCVERSION - ".$resp->{docVersion});
+	syslog(LOG_INFO, "FORMATVERSION - ".$resp->{dumpFormatVersion});
 	$time = {
 		reg => $resp->{lastDumpDate},
 		urgent => $resp->{lastDumpDateUrgently}};
