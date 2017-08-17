@@ -42,7 +42,7 @@
 #include "filters.h"
 
 
-#define VERSION "0.9.1"
+#define VERSION "0.9.2"
 #define QUEUE_MAXLEN 1024
 #define CONF_NAME_LEN 1024
 
