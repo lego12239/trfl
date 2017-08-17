@@ -288,6 +288,17 @@ sub prework
 		report_err("Can't create csv instance");
 		exit(1);
 	}
+
+	unless (mkdir($conf->{VARDIR})) {
+		if ($! != 17) {
+			die("Can't create a var directory: ".$!);
+		}
+	}
+	unless (mkdir($conf->{BACKUPDIR})) {
+		if ($! != 17) {
+			die("Can't create a backup directory: ".$!);
+		}
+	}
 }
 
 sub postwork
@@ -307,11 +318,6 @@ sub postwork
 		}
 	}
 	close($fh_tf);
-	unless (mkdir($conf->{BACKUPDIR})) {
-		if ($! != 17) {
-			die("Can't create a backup directory: ".$!);
-		}
-	}
 	@types = localtime(time());
 	$postfix = sprintf(".%04d-%02d-%02dT%02d:%02d", 
 	  $types[5] + 1900, $types[4] + 1, $types[3], $types[2], $types[1]);
@@ -577,11 +583,6 @@ sub set_time_last
 	my ($time) = @_;
 	my $fh;
 	
-	unless (mkdir($conf->{VARDIR})) {
-		if ($! != 17) {
-			die("Can't create a var directory: ".$!);
-		}
-	}
 	unless (open($fh, ">", $conf->{VARDIR}."/time_last")) {
 		die("can't open ".$conf->{VARDIR}."/time_last: ".$!);
 	}
