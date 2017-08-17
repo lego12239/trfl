@@ -354,7 +354,7 @@ sub postwork
 		$i++;
 	}
 	
-	set_time_last($time_last);
+	set_var_uint("time_last", $time_last);
 }
 
 sub block_entry
@@ -568,49 +568,17 @@ sub block_entry_by_ipprefs
 	return 0;
 }
 
-sub get_time_last
+sub get_var_any
 {
-	my $fh;
-	my $time;
-	
-	unless (open($fh, "<", $conf->{VARDIR}."/time_last")) {
-		if ($! == 2) {
-			return 0;
-		}
-		die("can't open ".$conf->{VARDIR}."/time_last: ".$!);
-	}
-	$time = <$fh>;
-	close($fh);
-
-	if ($time !~ /^[0-9]+$/o) {
-		unlink($conf->{VARDIR}."/time_last");
-		$time = 0;
-	}
-	return $time;
-}
-
-sub set_time_last
-{
-	my ($time) = @_;
-	my $fh;
-	
-	unless (open($fh, ">", $conf->{VARDIR}."/time_last")) {
-		die("can't open ".$conf->{VARDIR}."/time_last: ".$!);
-	}
-	print($fh $time);
-	close($fh);
-}
-
-sub get_ver_docs
-{
+	my ($name) = @_;
 	my $fh;
 	my $ret;
 	
-	unless (open($fh, "<", $conf->{VARDIR}."/ver_docs")) {
+	unless (open($fh, "<", $conf->{VARDIR}."/$name")) {
 		if ($! == 2) {
-			return "0";
+			return "";
 		}
-		die("can't open ".$conf->{VARDIR}."/ver_docs: ".$!);
+		die("can't open ".$conf->{VARDIR}."/$name: ".$!);
 	}
 	$ret = <$fh>;
 	close($fh);
@@ -618,15 +586,49 @@ sub get_ver_docs
 	return $ret;
 }
 
-sub set_ver_docs
+sub set_var_any
 {
-	my ($ver) = @_;
+	my ($name, $val) = @_;
 	my $fh;
 	
-	unless (open($fh, ">", $conf->{VARDIR}."/ver_docs")) {
-		die("can't open ".$conf->{VARDIR}."/ver_docs: ".$!);
+	unless (open($fh, ">", $conf->{VARDIR}."/$name")) {
+		die("can't open ".$conf->{VARDIR}."/$name: ".$!);
 	}
-	print($fh $ver);
+	print($fh $val);
+	close($fh);
+}
+
+sub get_var_uint
+{
+	my ($name) = @_;
+	my $fh;
+	my $val;
+	
+	unless (open($fh, "<", $conf->{VARDIR}."/$name")) {
+		if ($! == 2) {
+			return 0;
+		}
+		die("can't open ".$conf->{VARDIR}."/$name: ".$!);
+	}
+	$val = <$fh>;
+	close($fh);
+
+	if ($val !~ /^[0-9]+$/o) {
+		unlink($conf->{VARDIR}."/$name");
+		$val = 0;
+	}
+	return $val;
+}
+
+sub set_var_uint
+{
+	my ($name, $val) = @_;
+	my $fh;
+	
+	unless (open($fh, ">", $conf->{VARDIR}."/$name")) {
+		die("can't open ".$conf->{VARDIR}."/$name: ".$!);
+	}
+	print($fh $val);
 	close($fh);
 }
 
@@ -637,45 +639,16 @@ sub handle_ver_docs
 	
 	syslog(LOG_INFO, "DOCVERSION - ".$ver);
 	eval {
-		$ver_last = get_ver_docs();
+		$ver_last = get_var_any("ver_docs");
 		if ($ver_last != $ver) {
 			syslog(LOG_INFO, "Fire callback");
 			bin_run($conf->{DOCVERSION_ONCHANGE});
-			set_ver_docs($ver);
+			set_var_any("ver_docs", $ver);
 		}
 	};
 	if ($@) {
 		syslog(LOG_WARNING, "Handling of docs version change error: ".$@);
 	}
-}
-
-sub get_ver_regfmt
-{
-	my $fh;
-	my $ret;
-	
-	unless (open($fh, "<", $conf->{VARDIR}."/ver_regfmt")) {
-		if ($! == 2) {
-			return "0";
-		}
-		die("can't open ".$conf->{VARDIR}."/ver_regfmt: ".$!);
-	}
-	$ret = <$fh>;
-	close($fh);
-
-	return $ret;
-}
-
-sub set_ver_regfmt
-{
-	my ($ver) = @_;
-	my $fh;
-	
-	unless (open($fh, ">", $conf->{VARDIR}."/ver_regfmt")) {
-		die("can't open ".$conf->{VARDIR}."/ver_regfmt: ".$!);
-	}
-	print($fh $ver);
-	close($fh);
 }
 
 sub handle_ver_regfmt
@@ -685,46 +658,17 @@ sub handle_ver_regfmt
 	
 	syslog(LOG_INFO, "FORMATVERSION - ".$ver);
 	eval {
-		$ver_last = get_ver_regfmt();
+		$ver_last = get_var_any("ver_regfmt");
 		if ($ver_last != $ver) {
 			syslog(LOG_INFO, "Fire callback");
 			bin_run($conf->{FORMATVERSION_ONCHANGE});
-			set_ver_regfmt($ver);
+			set_var_any("ver_regfmt", $ver);
 		}
 	};
 	if ($@) {
 		syslog(LOG_WARNING, "Handling of registry format version change ".
 		  "error: ".$@);
 	}
-}
-
-sub get_ver_api
-{
-	my $fh;
-	my $ret;
-	
-	unless (open($fh, "<", $conf->{VARDIR}."/ver_api")) {
-		if ($! == 2) {
-			return "0";
-		}
-		die("can't open ".$conf->{VARDIR}."/ver_api: ".$!);
-	}
-	$ret = <$fh>;
-	close($fh);
-
-	return $ret;
-}
-
-sub set_ver_api
-{
-	my ($ver) = @_;
-	my $fh;
-	
-	unless (open($fh, ">", $conf->{VARDIR}."/ver_api")) {
-		die("can't open ".$conf->{VARDIR}."/ver_api: ".$!);
-	}
-	print($fh $ver);
-	close($fh);
 }
 
 sub handle_ver_api
@@ -734,11 +678,11 @@ sub handle_ver_api
 	
 	syslog(LOG_INFO, "APIVERSION - ".$ver);
 	eval {
-		$ver_last = get_ver_api();
+		$ver_last = get_var_any("ver_api");
 		if ($ver_last != $ver) {
 			syslog(LOG_INFO, "Fire callback");
 			bin_run($conf->{APIVERSION_ONCHANGE});
-			set_ver_api($ver);
+			set_var_any("ver_api", $ver);
 		}
 	};
 	if ($@) {
@@ -756,7 +700,7 @@ sub get_registry
 	
 	$req = new rknr_req(soap_uri => $conf->{SOAP_URI},
 	  soap_ns => $conf->{SOAP_NS}, req => $opt_req, sig => $opt_sig);
-	$time_last = get_time_last();
+	$time_last = get_var_uint("time_last");
 	$info = $req->get_info();
 	handle_ver_docs($info->{ver_docs});
 	handle_ver_regfmt($info->{ver_regfmt});
