@@ -173,4 +173,33 @@ sub get_data
 	return $self->get_result($code);
 }
 
+sub get_last_dump_date
+{
+	my $self = shift;
+	my $soap = $self->{_soap};
+	my $time;
+	my $resp;
+	
+	syslog(LOG_INFO, "get a last dump time...");
+	eval {
+		$resp = $soap->call("getLastDumpDateEx");
+	};
+	if ($@) {
+		die("rknr_req: soap exception: ".$@);
+	}
+	if ($resp->fault()) {
+		die("soap error: ".$resp->faultcode().": ".$resp->faultstring().
+		  "(".$resp->faultdetail().")");
+	}
+	$resp = $resp->body()->{getLastDumpDateExResponse};
+	if (!defined($resp)) {
+		die("response is empty!");
+	}
+	syslog(LOG_INFO, "DOCVERSION - ".$resp->{docVersion});
+	$time = {
+		reg => $resp->{lastDumpDate},
+		urgent => $resp->{lastDumpDateUrgently}};
+	return $time;
+}
+
 1;

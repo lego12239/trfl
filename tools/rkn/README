@@ -21,7 +21,15 @@ Edit rknr_get.sh to fit your configuration. This script execute
 rknr_get.pl with needed options to download a register and convert it,
 and after that send a signal to trfl to reload a config.
 
+On every run rknr_get.pl checks last update time of urgent entries and
+if it bigger than a last download time, a registry is downloaded.
+Also, if last update time of urgent entries is not changed but
+time elpased from a last registry download is bigger than
+MAX_DOWNLOAD_INTERVAL(see rknr_get.pl), then a registry is downloaded.
+
 As soon as needed changes are applied place a line in cron for
-executing rknr_get.sh.
+executing rknr_get.sh like this:
+
+*/10 *  * * *  root  /opt/rkn/rknr_get.sh
 
 To convert existent xml file without downloading it, use -i option.

@@ -16,10 +16,12 @@ use constant {
 	SOAP_NS => "http://vigruzki.rkn.gov.ru/OperatorRequest/",
 	TMPDIR => "tmp",
 	BACKUPDIR => "backup",
+	VARDIR => "var",
+	MAX_DOWNLOAD_INTERVAL => 1000 * 3600 * 6,  # in milliseconds
 	SYSLOG_FACILITY => LOG_LOCAL7,
 };
 
-my $req;
+my $time_last;
 my $ret;
 my $entry;
 my $xmlp;
@@ -288,6 +290,8 @@ sub postwork
 		}
 		$i++;
 	}
+	
+	set_time_last($time_last);
 }
 
 sub block_entry
@@ -501,6 +505,77 @@ sub block_entry_by_ipprefs
 	return 0;
 }
 
+sub get_time_last
+{
+	my $fh;
+	my $time;
+	
+	unless (open($fh, "<", VARDIR."/time_last")) {
+		if ($! == 2) {
+			return 0;
+		}
+		die("can't open ".VARDIR."/time_last: ".$!);
+	}
+	$time = <$fh>;
+	close($fh);
+
+	if ($time !~ /^[0-9]+$/o) {
+		unlink(VARDIR."/time_last");
+		$time = 0;
+	}
+	return $time;
+}
+
+sub set_time_last
+{
+	my ($time) = @_;
+	my $fh;
+	
+	unless (mkdir(VARDIR)) {
+		if ($! != 17) {
+			die("Can't create a var directory: ".$!);
+		}
+	}
+	unless (open($fh, ">", VARDIR."/time_last")) {
+		die("can't open ".VARDIR."/time_last: ".$!);
+	}
+	print($fh $time);
+	close($fh);
+}
+
+sub get_registry
+{
+	my $req;
+	my $arch;
+	my $files;
+	my $time_reg;
+	my $time = time() * 1000;
+	
+	$req = new rknr_req(soap_uri => SOAP_URI, soap_ns => SOAP_NS,
+	  req => $opt_req, sig => $opt_sig);
+	$time_last = get_time_last();
+	$time_reg = $req->get_last_dump_date();
+	syslog(LOG_INFO, "last dump urgent time is ".$time_reg->{urgent}.
+	  "; loaded - ".$time_last);
+	if (($time_reg->{urgent} <= $time_last) &&
+	    (($time - $time_last) < MAX_DOWNLOAD_INTERVAL)) {
+		return;
+	}
+	$time_last = $time_reg->{urgent};
+	if (($time - $time_last) >= MAX_DOWNLOAD_INTERVAL) {
+		syslog(LOG_INFO, "MAX_DOWNLOAD_INTERVAL is reached");
+		# Use 1800 seconds to be safe of time differencies
+		$time_last = $time - 1800 * 1000;
+	}
+	syslog(LOG_INFO, "download the archive...");
+	$arch = $req->get_data();
+	syslog(LOG_INFO, "unpack the archive...");
+	$files = get_file_from_zip($arch, TMPDIR."/data.zip");
+	syslog(LOG_INFO, "archive is unpacked");
+	
+	return $files;
+}
+
 sub main
 {
 	my $dh;
@@ -528,11 +603,10 @@ sub main
 	if ($opt_in) {
 		$files = [ $opt_in ];
 	} else {
-		$req = new rknr_req(soap_uri => SOAP_URI, soap_ns => SOAP_NS,
-		  req => $opt_req, sig => $opt_sig);
-		syslog(LOG_INFO, "unpack the archive...");
-		$files = get_file_from_zip($req->get_data(), TMPDIR."/data.zip");
-		syslog(LOG_INFO, "archive is unpacked");
+		$files = get_registry();
+		if (!defined($files)) {
+			return;
+		}
 	}
 
 	prework();
