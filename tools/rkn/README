@@ -40,4 +40,10 @@ executing rknr_get.sh like this:
 
 */10 *  * * *  root  /opt/rkn/rknr_get.sh
 
+Do not forget to add the line like the next to cron file too:
+
+0 1  * * *  root  find /opt/rkn/backup/ -mtime +20 -type f -exec rm -f '{}' \+
+
+To automatically delete old backup files.
+
 To convert existent xml file without downloading it, use -i option.
