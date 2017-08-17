@@ -198,6 +198,7 @@ sub get_last_dump_date
 	}
 	syslog(LOG_INFO, "DOCVERSION - ".$resp->{docVersion});
 	syslog(LOG_INFO, "FORMATVERSION - ".$resp->{dumpFormatVersion});
+	syslog(LOG_INFO, "APIVERSION - ".$resp->{webServiceVersion});
 	$time = {
 		reg => $resp->{lastDumpDate},
 		urgent => $resp->{lastDumpDateUrgently}};
