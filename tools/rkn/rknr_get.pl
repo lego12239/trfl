@@ -310,17 +310,6 @@ sub prework
 		report_err("Can't create csv instance");
 		exit(1);
 	}
-
-	unless (mkdir($conf->{VARDIR})) {
-		if ($! != 17) {
-			die("Can't create a var directory: ".$!);
-		}
-	}
-	unless (mkdir($conf->{BACKUPDIR})) {
-		if ($! != 17) {
-			die("Can't create a backup directory: ".$!);
-		}
-	}
 }
 
 sub postwork
@@ -818,6 +807,17 @@ sub main
 		die("A file error: an output file is not specified");
 	}
 	
+	unless (mkdir($conf->{VARDIR})) {
+		if ($! != 17) {
+			die("Can't create a var directory: ".$!);
+		}
+	}
+	unless (mkdir($conf->{BACKUPDIR})) {
+		if ($! != 17) {
+			die("Can't create a backup directory: ".$!);
+		}
+	}
+
 	if ($opt_in) {
 		$files = [ $opt_in ];
 	} else {
