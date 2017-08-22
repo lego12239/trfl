@@ -1,6 +1,9 @@
 #!/bin/bash
 
-pgrep rknr_get.pl && exit
+PID_SELF=$$
+PIDS=$(pgrep $(basename $0))
+PIDS=$(echo "$PIDS" | grep -v $PID_SELF)
+[[ $PIDS != "" ]] && exit
 
 DIR=${0%/*}
 
