@@ -60,7 +60,6 @@ sub conf_check
 	
 	@prms = keys(%$conf);
 	foreach $prm (@prms) {
-		print("$prm = ".$conf->{$prm}."\n");
 		if (!defined($conf->{$prm})) {
 			die("conf parameter ".$prm." is not supplied");
 		}
