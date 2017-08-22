@@ -7,6 +7,7 @@ use Getopt::Long qw(:config gnu_getopt);
 use Sys::Syslog qw(:standard :macros);
 use Text::CSV;
 use URI;
+use URI::_idna;
 use Cwd;
 use Data::Dumper;
 
