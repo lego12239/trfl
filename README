@@ -113,11 +113,17 @@ USING
 
 Place something like this in iptables:
 
-iptables -t nat -A PREROUTING -i eth0 -j NFQUEUE --queue-balance 0:2
+iptables -t nat -N trfl
+iptables -t nat -A PREROUTING -i eth0 -j trfl
+iptables -t nat -A trfl -m statistic --mode nth --every 4 --packet 0 -j NFQUEUE --queue-num 0
+iptables -t nat -A trfl -m statistic --mode nth --every 3 --packet 0 -j NFQUEUE --queue-num 1
+iptables -t nat -A trfl -m statistic --mode nth --every 2 --packet 0 -j NFQUEUE --queue-num 2
+iptables -t nat -A trfl -j NFQUEUE --queue-num 3
+
 iptables -A FORWARD -p tcp -m tcp -m mark --mark 1 -j REJECT --reject-with tcp-reset
 iptables -A FORWARD -m mark --mark 1 -j REJECT --reject-with icmp-port-unreachable
 
 Use conf_example. Start trfl:
 
-./trfl -q 0:2 -p /va/run/trfl.pid conf_example
+./trfl -q 0:3 -p /va/run/trfl.pid conf_example
 
