@@ -50,6 +50,7 @@
 struct global_opts opts;
 static struct thread_data *thread_data;
 __thread unsigned int thread_idx;
+pthread_mutex_t nfq_open_mut;
 
 static void parse_queue_num(char *str, unsigned int *qf, unsigned int *ql);
 static void output_usage(void);
@@ -565,12 +566,23 @@ init_nfq(unsigned int nfq_num)
 	struct nfq_q_handle *qh;
 	int size, ret;
 	
+	ret = pthread_mutex_lock(&nfq_open_mut);
+	if (ret != 0) {
+		ERR_OUT("nfq_open mutex lock error: %s", strerror(ret));
+		exit(EXIT_FAILURE);
+	}
 	h = nfq_open();
 	if (!h) {
 		ERR_OUT("thread %u: nfq error: queue %d nfq_open() error",
 		  thread_idx, nfq_num);
 		exit(EXIT_FAILURE);
 	}
+	ret = pthread_mutex_unlock(&nfq_open_mut);
+	if (ret != 0) {
+		ERR_OUT("nfq_open mutex unlock error: %s", strerror(ret));
+		exit(EXIT_FAILURE);
+	}
+	
 	if (nfq_unbind_pf(h, AF_INET) < 0) {
 		ERR_OUT("thread %u: nfq error: queue %d nfq_bind_pf() error",
 		  thread_idx, nfq_num);
@@ -677,6 +689,11 @@ main(int argc, char **argv)
 		ERR_OUT("setpriority() error(want %d priority): %s", -18,
 		  strerror(errno));
 
+	ret = pthread_mutex_init(&nfq_open_mut, NULL);
+	if (ret != 0) {
+		ERR_OUT("nfq_open mutex initialization error: %s", strerror(ret));
+		exit(EXIT_FAILURE);
+	}
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 	for(i = 0; i <= (opts.qn_last - opts.qn_first); i++) {
