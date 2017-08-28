@@ -17,4 +17,9 @@ int normalize_and_check_domain_name(char *name);
  */
 void normalize_domain_name(char *name);
 
+/*
+ * Caller must free returned string only if pointer not equal to name!
+ */
+char* normalize_uri_host(char *name, int size);
+
 #endif /* __UTIL_H__ */
