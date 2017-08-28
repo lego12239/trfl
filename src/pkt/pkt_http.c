@@ -89,7 +89,7 @@ parse_pkt(struct pkt *pkt_prev, unsigned char *data, int size)
 			if (ret < 0)
 				goto err_free_pkt;
 			is_host_found = 1;
-			/* do process other headers */
+			/* do not process other headers */
 			ret = 2;
 			break;
 		}
