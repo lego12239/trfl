@@ -106,6 +106,7 @@ _add_domain_and_uri(struct pkt *pkt_prev, struct pkt_http *pkt)
 	
 	normalize_domain_name(pkt->headers->value);
 	
+	/* Add domain name */
 	len = strlen(pkt->headers->value);
 	port = strrchr(pkt->headers->value, ':');
 	if (port)
@@ -114,14 +115,17 @@ _add_domain_and_uri(struct pkt *pkt_prev, struct pkt_http *pkt)
 	if (ret < 0)
 		return ret;
 	
+	/* Add uri */
 	host = normalize_uri_host(pkt->headers->value, len);
 	if (!host)
 		return -2;
+	
 	len = strlen("http://") + strlen(pkt->target);
 	if (host == pkt->headers->value)
 		len += strlen(pkt->headers->value);
 	else
 		len += strlen(host) + strlen(port);
+	
 	uri = malloc(len + 1);
 	if (!uri)
 		goto err_cleanup;
@@ -134,6 +138,10 @@ _add_domain_and_uri(struct pkt *pkt_prev, struct pkt_http *pkt)
 		strcat(uri, port);
 	}
 	strcat(uri, pkt->target);
+	while (uri[len - 1] == '/')
+		len--;
+	uri[len] = '\0';
+
 	ret = pkt_uri_add(pkt_prev, uri);
 	if (ret < 0)
 		goto err_cleanup;
@@ -228,7 +236,7 @@ static int
 _parse_start_line(struct pkt_http *pkt, char **buf, int *size)
 {
 	int ret;
-	char *s, *e, *ee;
+	char *s, *e;
 
 	s = *buf;	
 	/* get method */
@@ -254,10 +262,7 @@ _parse_start_line(struct pkt_http *pkt, char **buf, int *size)
 	if (ret != 3)
 		return 1;
 	*size -= e - s;
-	ee = e;
-	while ((ee != s) && (*(ee - 1) == '/'))
-		ee--;
-	pkt->target = strndup(s, ee - s);
+	pkt->target = strndup(s, e - s);
 	if (!pkt->target)
 		return -1;
 	
