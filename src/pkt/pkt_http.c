@@ -22,6 +22,7 @@ struct http_token_ctx {
 static int free_pkt(struct pkt *pkt);
 static int _parse_start_line(struct pkt_http *pkt, char **buf, int *size);
 static int _parse_header(struct pkt_http *pkt, char **buf, int *size);
+static int _add_domain_and_uri(struct pkt *pkt_prev, struct pkt_http *pkt);
 static struct http_header* _http_header_add(struct pkt_http *pkt, char *name, int name_len, char *value, int value_len);
 static unsigned int _get_token(char *str, unsigned int n, char **end);
 static void _lc(char *name);
@@ -37,9 +38,8 @@ init(void)
 static int
 parse_pkt(struct pkt *pkt_prev, unsigned char *data, int size)
 {
-	char *uri = NULL, *ptr;
 	struct pkt_http *pkt;
-	int ret, len, id, is_host_found = 0;
+	int ret, id, is_host_found = 0;
 
 	/* get tcp port number */
 	if (pkt_prev->pkt_type != pkt_type_tcp) {
@@ -65,27 +65,7 @@ parse_pkt(struct pkt *pkt_prev, unsigned char *data, int size)
 	
 	while ((ret = _parse_header(pkt, (char**)&data, &size)) == 0) {
 		if (strcmp(pkt->headers->name, "host") == 0) {
-			ret = normalize_and_check_domain_name(pkt->headers->value);
-			if (ret < 0)
-				goto err_free_pkt;
-			len = snprintf(NULL, 0, "http://%s%s", pkt->headers->value,
-			  pkt->target);
-			ret = -1;
-			uri = malloc(len + 1);
-			if (!uri)
-				goto err_free_pkt;
-			snprintf(uri, len + 1, "http://%s%s", pkt->headers->value,
-			  pkt->target);
-			ret = pkt_uri_add(pkt_prev, uri);
-			if (ret < 0) {
-				free(uri);
-				goto err_free_pkt;
-			}
-			len = strlen(pkt->headers->value);
-			ptr = strrchr(pkt->headers->value, ':');
-			if (ptr)
-				len = ptr - pkt->headers->value;
-			ret = pkt_domain_add(pkt_prev, pkt->headers->value, len);
+			ret = _add_domain_and_uri(pkt_prev, pkt);
 			if (ret < 0)
 				goto err_free_pkt;
 			is_host_found = 1;
@@ -116,6 +96,58 @@ err_free_pkt:
 	list_rm(&pkt->list);
 	free_pkt((struct pkt*)pkt);
 	return ret;
+}
+
+static int
+_add_domain_and_uri(struct pkt *pkt_prev, struct pkt_http *pkt)
+{
+	char *uri = NULL, *host, *port;
+	int ret, len;
+	
+	normalize_domain_name(pkt->headers->value);
+	
+	len = strlen(pkt->headers->value);
+	port = strrchr(pkt->headers->value, ':');
+	if (port)
+		len = port - pkt->headers->value;
+	ret = pkt_domain_add(pkt_prev, pkt->headers->value, len);
+	if (ret < 0)
+		return ret;
+	
+	host = normalize_uri_host(pkt->headers->value, len);
+	if (!host)
+		return -2;
+	len = strlen("http://") + strlen(pkt->target);
+	if (host == pkt->headers->value)
+		len += strlen(pkt->headers->value);
+	else
+		len += strlen(host) + strlen(port);
+	uri = malloc(len + 1);
+	if (!uri)
+		goto err_cleanup;
+	uri[0] = '\0';
+	strcat(uri, "http://");
+	if (host == pkt->headers->value) {
+		strcat(uri, pkt->headers->value);
+	} else {
+		strcat(uri, host);
+		strcat(uri, port);
+	}
+	strcat(uri, pkt->target);
+	ret = pkt_uri_add(pkt_prev, uri);
+	if (ret < 0)
+		goto err_cleanup;
+	
+	if (host != pkt->headers->value)
+		free(host);
+	return 0;
+
+err_cleanup:
+	if (host != pkt->headers->value)
+		free(host);
+	if (uri)
+		free(uri);
+	return -1;
 }
 
 static void
