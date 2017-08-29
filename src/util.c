@@ -49,6 +49,20 @@ static char* itoax[256] = {
 
 
 /*
+ * Convert A-Z characters to lowercase in-place.
+ * str - a string
+ */
+void
+lcase_en(char *str)
+{
+	while (*str) {
+		if ((*str >= 65) && (*str <= 90))
+			*str = *str + 32;
+		str++;
+	}
+}
+
+/*
  * Convert character to lowercase and check bad characters existence.
  * name - a domain name
  *

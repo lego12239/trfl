@@ -3,6 +3,11 @@
 
 
 /*
+ * Convert A-Z characters to lowercase in-place.
+ * str - a string
+ */
+void lcase_en(char *str);
+/*
  * Convert character to lowercase and check bad characters existence.
  * name - a domain name
  *
