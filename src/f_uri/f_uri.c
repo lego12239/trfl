@@ -76,18 +76,12 @@ static int
 list_entry_add(void *list, char **fields, unsigned int n)
 {
 	struct uri_list *urilist = list;
-	unsigned int len;
 	
 	if (strcmp(fields[0], "uri") != 0)
 		return 1;
 	if (n < 2)
 		return 0;
 	if (fields[1][0] != '\0') {
-		len = strlen(fields[1]);
-		while ((len > 0) && (fields[1][len - 1] == '/')) {
-			len--;
-		}
-		fields[1][len] = '\0';
 		if (!uri_list_add(urilist, fields[1])) {
 			ERR_OUT("uri: uri add error: %s: no memory", fields[1]);
 			return -1;
