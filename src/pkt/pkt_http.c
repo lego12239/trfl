@@ -25,7 +25,6 @@ static int _parse_header(struct pkt_http *pkt, char **buf, int *size);
 static int _add_domain_and_uri(struct pkt *pkt_prev, struct pkt_http *pkt);
 static struct http_header* _http_header_add(struct pkt_http *pkt, char *name, int name_len, char *value, int value_len);
 static unsigned int _get_token(char *str, unsigned int n, char **end);
-static void _lc(char *name);
 static int _dump_pkt(int outlvl, struct pkt *pkt);
 
 
@@ -316,7 +315,7 @@ _parse_header(struct pkt_http *pkt, char **buf, int *size)
 	hdr = _http_header_add(pkt, s, e - s - 1, NULL, 0);
 	if (!hdr)
 		return -1;
-	_lc(hdr->name);
+	lcase_en(hdr->name);
 	
 	s = e;
 	ret = _get_token(s, *size, &e);
@@ -438,14 +437,3 @@ _get_token(char *str, unsigned int n, char **end)
 	
 	return ret;
 }
-
-static void
-_lc(char *name)
-{
-	while (*name) {
-		if ((*name >= 65) && (*name <= 90))
-			*name = *name + 32;
-		name++;
-	}
-}
-
