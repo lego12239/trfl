@@ -209,7 +209,7 @@ _dump_pkt(int outlvl, struct pkt *pkt)
 		header = list_item(lh, struct http_header, list);
 		ANY_OUT(outlvl, "%u: http: %s: %s", id, header->name, header->value);
 	}
-	ANY_OUT(outlvl, "%u: http: PACKET DUMP: %.*s", pkt_http->pkt_len,
+	ANY_OUT(outlvl, "%u: http: PACKET DUMP: %.*s", id, pkt_http->pkt_len,
 	  pkt_http->pkt_raw);
 	return 0;
 }
