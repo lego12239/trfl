@@ -99,11 +99,7 @@ normalize_and_check_domain_name(char *name)
 void
 normalize_domain_name(char *name)
 {
-	while (*name) {
-		if ((*name >= 65) && (*name <= 90))
-			*name = *name + 32;
-		name++;
-	}
+	lcase_en(name);
 }
 
 /*
