@@ -63,7 +63,7 @@ parse_pkt(struct pkt *pkt_prev, unsigned char *data, int size)
 	struct pkt_tcp *pkt_tcp;
 	struct pkt_udp *pkt_udp;
 	struct pkt_dns *pkt;
-	struct dns_qentry qentry;
+	struct dns_qentry qentry, *qentry_new;
 	unsigned int i, off;
 	uint16_t cnt;
 	int ret;
@@ -139,13 +139,14 @@ parse_pkt(struct pkt *pkt_prev, unsigned char *data, int size)
 			return 1;
 		}
 		size -= ret;
-		pkt->qentry = (struct dns_qentry*)realloc(pkt->qentry,
+		qentry_new = (struct dns_qentry*)realloc(pkt->qentry,
 		  (i+1)*sizeof(struct dns_qentry));
-		if (!pkt->qentry) {
+		if (!qentry_new) {
 			list_rm(&pkt->list);
 			free_pkt((struct pkt*)pkt);
 			return -1;
 		}
+		pkt->qentry = qentry_new;
 		memcpy(&pkt->qentry[i].qname, &qentry.qname, qentry.qname_len + 1);
 		pkt->qentry[i].qname_len = qentry.qname_len;
 		pkt->qentry[i].qtype = qentry.qtype;
