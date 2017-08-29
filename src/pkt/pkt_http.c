@@ -251,14 +251,14 @@ _parse_start_line(struct pkt_http *pkt, char **buf, int *size)
 		return -1;
 	
 	s = e;
-	ret = _get_token(e, *size, &e);
+	ret = _get_token(s, *size, &e);
 	if (ret != 1)
 		return 1;
 	*size -= e - s;
 	
 	/* get target */
 	s = e;
-	ret = _get_token(e, *size, &e);
+	ret = _get_token(s, *size, &e);
 	if (ret != 3)
 		return 1;
 	*size -= e - s;
@@ -267,14 +267,14 @@ _parse_start_line(struct pkt_http *pkt, char **buf, int *size)
 		return -1;
 	
 	s = e;
-	ret = _get_token(e, *size, &e);
+	ret = _get_token(s, *size, &e);
 	if (ret != 1)
 		return 1;
 	*size -= e - s;
 	
 	/* get version */
 	s = e;
-	ret = _get_token(e, *size, &e);
+	ret = _get_token(s, *size, &e);
 	if (ret != 3)
 		return 1;
 	*size -= e - s;
@@ -287,7 +287,7 @@ _parse_start_line(struct pkt_http *pkt, char **buf, int *size)
 		return -1;
 
 	s = e;
-	ret = _get_token(e, *size, &e);
+	ret = _get_token(s, *size, &e);
 	if (ret != 2)
 		return 1;
 	*size -= e - s;
@@ -319,14 +319,14 @@ _parse_header(struct pkt_http *pkt, char **buf, int *size)
 	_lc(hdr->name);
 	
 	s = e;
-	ret = _get_token(e, *size, &e);
+	ret = _get_token(s, *size, &e);
 	if (ret != 1)
 		return 1;
 	*size -= e - s;
 	
 	/* get header value */
 	s = ss = e;
-	while (((ret = _get_token(e, *size, &e)) == 1) ||
+	while (((ret = _get_token(s, *size, &e)) == 1) ||
 	       (ret == 3)) {
 		*size -= e - s;
 		s = e;
