@@ -66,6 +66,9 @@ f_uri:
 
 uri:URI
 
+URI for http scheme must not contain any trailing slashes(because,
+pkt_http removes it on packet parsing).
+
 Example config can be seen in conf_example file.
 
 FEATURES
@@ -113,15 +116,15 @@ USING
 
 Place something like this in iptables:
 
-iptables -t nat -N trfl
-iptables -t nat -A PREROUTING -i eth0 -j trfl
-iptables -t nat -A trfl -m statistic --mode nth --every 4 --packet 0 -j NFQUEUE --queue-num 0
-iptables -t nat -A trfl -m statistic --mode nth --every 3 --packet 0 -j NFQUEUE --queue-num 1
-iptables -t nat -A trfl -m statistic --mode nth --every 2 --packet 0 -j NFQUEUE --queue-num 2
-iptables -t nat -A trfl -j NFQUEUE --queue-num 3
+iptables -N trfl
+iptables -A trfl -m statistic --mode nth --every 4 --packet 0 -j NFQUEUE --queue-num 0
+iptables -A trfl -m statistic --mode nth --every 3 --packet 0 -j NFQUEUE --queue-num 1
+iptables -A trfl -m statistic --mode nth --every 2 --packet 0 -j NFQUEUE --queue-num 2
+iptables -A trfl -j NFQUEUE --queue-num 3
 
 iptables -A FORWARD -p tcp -m tcp -m mark --mark 1 -j REJECT --reject-with tcp-reset
 iptables -A FORWARD -m mark --mark 1 -j REJECT --reject-with icmp-port-unreachable
+iptables -A FORWARD -i eth0 -j trfl
 
 Use conf_example. Start trfl:
 
