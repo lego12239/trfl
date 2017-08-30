@@ -439,20 +439,22 @@ sub block_entry_by_uri
 		$uri_parsed->fragment(undef);
 		$uri_parsed->userinfo(undef);
 		$uri_parsed->host(lc($uri_parsed->host()));
-		# this is not right(we must remove / from path, instead of uri)
-		$str = $uri_parsed->as_string();
-		$str =~ s/\/*$//o;
-		return db_add("uri", $str);
+		$str = $uri_parsed->path();
+		$str =~ s/\/+/\//go;
+		$str =~ s/\/$//o;
+		$uri_parsed->path($str);
+		return db_add("uri", $uri_parsed->as_string());
 	} elsif ($uri_parsed->{scheme} eq "https") {
 		$uri_parsed = URI->new($uri);
 		$uri_parsed->scheme("http");
 		$uri_parsed->fragment(undef);
 		$uri_parsed->userinfo(undef);
 		$uri_parsed->host(lc($uri_parsed->host()));
-		# this is not right(we must remove / from path, instead of uri)
-		$str = $uri_parsed->as_string();
-		$str =~ s/\/*$//o;
-		$ret = db_add("uri", $str);
+		$str = $uri_parsed->path();
+		$str =~ s/\/+/\//go;
+		$str =~ s/\/$//o;
+		$uri_parsed->path($str);
+		$ret = db_add("uri", $uri_parsed->as_string());
 		return $ret if ($ret < 0);
 		return db_add("domain", $uri_parsed->host());
 	} elsif ($uri_parsed->{scheme} eq "newcamd525") {
