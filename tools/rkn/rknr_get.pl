@@ -437,6 +437,7 @@ sub block_entry_by_uri
 	if ($uri_parsed->{scheme} eq "http") {
 		$uri_parsed = URI->new($uri);
 		$uri_parsed->fragment(undef);
+		$uri_parsed->userinfo(undef);
 		$uri_parsed->host(lc($uri_parsed->host()));
 		# this is not right(we must remove / from path, instead of uri)
 		$str = $uri_parsed->as_string();
@@ -446,6 +447,7 @@ sub block_entry_by_uri
 		$uri_parsed = URI->new($uri);
 		$uri_parsed->scheme("http");
 		$uri_parsed->fragment(undef);
+		$uri_parsed->userinfo(undef);
 		$uri_parsed->host(lc($uri_parsed->host()));
 		# this is not right(we must remove / from path, instead of uri)
 		$str = $uri_parsed->as_string();
