@@ -1,2 +1,2 @@
 list conf_ex_whitelist accept 0
-list conf_ex_blacklist accept 1
+list conf_ex_blacklist repeat 1
