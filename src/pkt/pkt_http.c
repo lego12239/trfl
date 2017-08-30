@@ -23,6 +23,7 @@ static int free_pkt(struct pkt *pkt);
 static int _parse_start_line(struct pkt_http *pkt, char **buf, int *size);
 static int _parse_header(struct pkt_http *pkt, char **buf, int *size);
 static int _add_domain_and_uri(struct pkt *pkt_prev, struct pkt_http *pkt);
+static void uri_add_target(char *uri, char *target);
 static struct http_header* _http_header_add(struct pkt_http *pkt, char *name, int name_len, char *value, int value_len);
 static unsigned int _get_token(char *str, unsigned int n, char **end);
 static int _dump_pkt(int outlvl, struct pkt *pkt);
@@ -136,10 +137,7 @@ _add_domain_and_uri(struct pkt *pkt_prev, struct pkt_http *pkt)
 		strcat(uri, host);
 		strcat(uri, port);
 	}
-	strcat(uri, pkt->target);
-	while (uri[len - 1] == '/')
-		len--;
-	uri[len] = '\0';
+	uri_add_target(uri + strlen(uri), pkt->target);
 
 	ret = pkt_uri_add(pkt_prev, uri);
 	if (ret < 0)
@@ -155,6 +153,35 @@ err_cleanup:
 	if (uri)
 		free(uri);
 	return -1;
+}
+
+/*
+ * Add target string to uri removing duplicates of / and trailing /.
+ * uri - a destination pointer
+ * target - a source string
+ */
+static void
+uri_add_target(char *uri, char *target)
+{
+	int do_copy = 1, path_exist = 0;
+	
+	while ((*target != '\0') && (*target != '?') && (*target != '#')) {
+		if (do_copy) {
+			*uri = *target;
+			uri++;
+		}
+		target++;
+		path_exist = 1;
+		if ((*(uri - 1) == '/') && (*target == '/'))
+			do_copy = 0;
+		else
+			do_copy = 1;
+	}
+	if (path_exist)
+		if (*(uri - 1) == '/')
+			uri--;
+	*uri = '\0';
+	strcat(uri, target);
 }
 
 static void
