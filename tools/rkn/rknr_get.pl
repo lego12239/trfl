@@ -354,7 +354,9 @@ sub postwork
 		$i++;
 	}
 	
-	set_var_uint("time_last", $time_last);
+	if (defined($time_last)) {
+		set_var_uint("time_last", $time_last);
+	}
 }
 
 sub block_entry
