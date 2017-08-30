@@ -715,8 +715,8 @@ sub get_registry
 	$time_last = $info->{ut_urgent};
 	if (($time - $time_last) >= $conf->{MAX_DOWNLOAD_INTERVAL}) {
 		syslog(LOG_INFO, "MAX_DOWNLOAD_INTERVAL is reached");
-		# Use 1800 seconds to be safe of time differencies
-		$time_last = $time - 1800 * 1000;
+		# Use 600 seconds to be safe of time differencies
+		$time_last = $time - 600 * 1000;
 	}
 	syslog(LOG_INFO, "download the archive...");
 	$arch = $req->get_data();
