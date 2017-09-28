@@ -387,8 +387,7 @@ conf_release_elist_chain(struct elist_chain *elchain)
 	}
 	
 	c = (struct conf*)elchain->conf;
-	c->ref_cnt--;
-	ref_cnt = c->ref_cnt;
+	ref_cnt = --c->ref_cnt;
 	
 	ret = pthread_mutex_unlock(&conf_mut);
 	if (ret != 0) {
@@ -431,12 +430,10 @@ _conf_replace(struct conf *c)
 	old_conf = conf;
 	conf = c;
 	if (old_conf)
-		old_conf->ref_cnt--;
-	c->ref_cnt++;
-	if (old_conf)
-		ref_cnt = old_conf->ref_cnt;
+		ref_cnt = --old_conf->ref_cnt;
 	else
 		ref_cnt = 1;
+	c->ref_cnt++;
 	
 	ret = pthread_mutex_unlock(&conf_mut);
 	if (ret != 0) {
