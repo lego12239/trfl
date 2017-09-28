@@ -128,5 +128,5 @@ iptables -A FORWARD -i eth0 -j trfl
 
 Use conf_example. Start trfl:
 
-./trfl -q 0:3 -p /va/run/trfl.pid conf_example
+./trfl -q 0:3 -p /var/run/trfl.pid conf_example
 
