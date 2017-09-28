@@ -31,6 +31,7 @@ static int _dump_pkt(int outlvl, struct pkt *pkt);
 static int
 init(void)
 {
+	INFO_OUT("tls: protocol version <3.1(< TLS 1.0) is not supported!");
 	return 0;
 }
 
@@ -61,12 +62,18 @@ parse_pkt(struct pkt *pkt_prev, unsigned char *data, int size)
 	if ((len + sizeof(*tlsh)) != size)
 		return 1;
 	if (tlsh->version_major != 3) {
+		/*
 		ERR_OUT("tls: version not equal to 3.x is not supported!");
 		return -3;
+		*/
+		return 3;
 	}
 	if (tlsh->version_minor < 1) {
+		/*
 		ERR_OUT("tls: version 3.0 is not supported!");
 		return -3;
+		*/
+		return 3;
 	}
 	if (tlsh->type != 22)
 		return 1;
