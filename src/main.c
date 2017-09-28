@@ -462,7 +462,7 @@ static int
 is_pkt_match(struct pkt *pkt, enum elist_act *act, uint32_t *mark,
   enum elist_act *act_default, uint32_t *mark_default)
 {
-	int i, ret;
+	int i, ret = 0;
 	struct elist *elist;
 	struct elist_chain *elchain;
 	struct list_item_head *lh;
@@ -479,14 +479,15 @@ is_pkt_match(struct pkt *pkt, enum elist_act *act, uint32_t *mark,
 			if (ret == 1) {
 				*act = elist->act_on_match;
 				*mark = elist->mark_on_match;
-				return 1;
+				goto out;
 			}
 		}
 	}
 	
+out:
 	conf_release_elist_chain(elchain);
 	
-	return 0;
+	return ret;
 }
 
 static int
