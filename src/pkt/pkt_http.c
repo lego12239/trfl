@@ -119,6 +119,8 @@ _add_domain_and_uri(struct pkt *pkt_prev, struct pkt_http *pkt)
 	host = normalize_uri_host(pkt->headers->value, len);
 	if (!host)
 		return -2;
+	if (!port)
+		port = "";
 	
 	len = strlen("http://") + strlen(pkt->target);
 	if (host == pkt->headers->value)
