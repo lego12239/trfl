@@ -90,8 +90,8 @@ parse_pkt(struct pkt *pkt_prev, unsigned char *data, int size)
 	if (cnt == 0)
 		return 2;
 	if (cnt > 1)
-		ERR_OUT("%u: dns: more than 1 rr in question section"
-		  "(saddr=%u, daddr=%u)!", get_pkt_id(pkt_prev), 0, 0);
+		PKT_ERROUT((struct pkt*)pkt_prev, "%u: dns: more than 1 rr in "
+		  "question section: %u!", get_pkt_id(pkt_prev), cnt);
 
 	off = sizeof(*dnsh);
 	pkt = malloc(sizeof(*pkt));
