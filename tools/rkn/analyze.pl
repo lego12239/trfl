@@ -164,18 +164,14 @@ sub analyze_url
 	my $entry = shift;
 	my $d;
 	my $i;
-	my $t = 0;
 	
 	$d = $entry->{url};
 	if (!defined($d)) {
 		$cnt->{url}{ewithout}++;
 		return;
 	}
-	foreach $i (@$d) {
-		$t++;
-	}
-	$cnt->{url}{total} += $t;
-	$cnt->{url}{emore1}++ if ($t > 1);
+	$cnt->{url}{total} += $#$d + 1;
+	$cnt->{url}{emore1}++ if ($#$d > 0);
 }
 
 sub analyze_domain
@@ -183,18 +179,14 @@ sub analyze_domain
 	my $entry = shift;
 	my $d;
 	my $i;
-	my $t = 0;
 	
 	$d = $entry->{domain};
 	if (!defined($d)) {
 		$cnt->{domain}{ewithout}++;
 		return;
 	}
-	foreach $i (@$d) {
-		$t++;
-	}
-	$cnt->{domain}{total} += $t;
-	$cnt->{domain}{emore1}++ if ($t > 1);
+	$cnt->{domain}{total} += $#$d + 1;
+	$cnt->{domain}{emore1}++ if ($#$d > 0);
 }
 
 sub analyze_ip
@@ -202,18 +194,14 @@ sub analyze_ip
 	my $entry = shift;
 	my $d;
 	my $i;
-	my $t = 0;
 	
 	$d = $entry->{ip};
 	if (!defined($d)) {
 		$cnt->{ip}{ewithout}++;
 		return;
 	}
-	foreach $i (@$d) {
-		$t++;
-	}
-	$cnt->{ip}{total} += $t;
-	$cnt->{ip}{emore1}++ if ($t > 1);
+	$cnt->{ip}{total} += $#$d + 1;
+	$cnt->{ip}{emore1}++ if ($#$d > 0);
 }
 
 sub analyze_ipsubnet
@@ -221,18 +209,14 @@ sub analyze_ipsubnet
 	my $entry = shift;
 	my $d;
 	my $i;
-	my $t = 0;
 	
 	$d = $entry->{ipsubnet};
 	if (!defined($d)) {
 		$cnt->{ipsubnet}{ewithout}++;
 		return;
 	}
-	foreach $i (@$d) {
-		$t++;
-	}
-	$cnt->{ipsubnet}{total} += $t;
-	$cnt->{ipsubnet}{emore1}++ if ($t > 1);
+	$cnt->{ipsubnet}{total} += $#$d + 1;
+	$cnt->{ipsubnet}{emore1}++ if ($#$d > 0);
 }
 
 sub analyze_scheme
