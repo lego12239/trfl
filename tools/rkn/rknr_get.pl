@@ -464,8 +464,7 @@ sub block_entry_by_uri
 		}
 		return 1;
 	} else {
-		syslog(LOG_ERR, "unknown uri scheme: %s",
-		  $entry->{url}{__text});
+		syslog(LOG_ERR, "unknown uri scheme: %s", $uri);
 		return -1;
 	}
 	
