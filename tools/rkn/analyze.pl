@@ -65,12 +65,19 @@ sub output_help
 	  " --d_out         output domains of block type domain\n".
 	  " --dm_out        output domain masks list\n".
 	  " --ip_out        output ips list\n".
-	  " --ipsubnet_out  output ip prefixes list\n");
+	  " --ipsubnet_out  output ip prefixes list\n".
+	  " -v, --version   show program version\n");
+}
+
+sub output_version
+{
+	print("analyze.pl 0-1.1\n");
 }
 
 sub proc_opts
 {
 	my $opt_h;
+	my $opt_v;
 
 
 	GetOptions(
@@ -80,10 +87,16 @@ sub proc_opts
 		'dm_out' => \$opt_dm_out,
 		'ip_out' => \$opt_ip_out,
 		'ipsubnet_out' => \$opt_ipsubnet_out,
-		'help|h' => \$opt_h);
+		'help|h' => \$opt_h,
+		'version|v' => \$opt_v);
 
 	if ($opt_h) {
 		output_help();
+		exit(0);
+	}
+	
+	if ($opt_v) {
+		output_version();
 		exit(0);
 	}
 	
