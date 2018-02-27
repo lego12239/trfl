@@ -47,7 +47,7 @@ sub output_help
 
 sub output_version
 {
-	print("rknr_rcheck.pl 0-1.0\n");
+	print("rknr_rcheck.pl 0-2.0\n");
 }
 
 sub proc_opts

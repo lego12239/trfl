@@ -248,7 +248,7 @@ sub output_help
 
 sub output_version
 {
-	print("rknr_get.pl 0-2.3\n");
+	print("rknr_get.pl 0-2.4\n");
 }
 
 sub proc_opts
