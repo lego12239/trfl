@@ -363,10 +363,10 @@ sub block_entry
 {
 	my ($entry) = @_;
 	
-	if (!defined($entry->{__attrs}{blockType})) {
-		$entry->{__attrs}{blockType} = "default";
+	if (!defined($entry->{__ATTRS}{blockType})) {
+		$entry->{__ATTRS}{blockType} = "default";
 	}
-	if ($entry->{__attrs}{blockType} eq "default") {
+	if ($entry->{__ATTRS}{blockType} eq "default") {
 		if (defined($entry->{url})) {
 			block_entry_by_uris($entry);
 		} elsif (defined($entry->{domain})) {
@@ -378,46 +378,37 @@ sub block_entry
 		} else {
 			syslog(LOG_ERR, "entry without uri, domain and ip: %s",
 			  Dumper($entry));
-			return;
+			return 1;
 		}
-	} elsif ($entry->{__attrs}{blockType} eq "domain") {
+	} elsif ($entry->{__ATTRS}{blockType} eq "domain") {
 		block_entry_by_domains($entry);
-	} elsif ($entry->{__attrs}{blockType} eq "domain-mask") {
+	} elsif ($entry->{__ATTRS}{blockType} eq "domain-mask") {
 		block_entry_by_domainmasks($entry);
-	} elsif ($entry->{__attrs}{blockType} eq "ip") {
+	} elsif ($entry->{__ATTRS}{blockType} eq "ip") {
 		if (defined($entry->{ip})) {
 			block_entry_by_ips($entry);
 		} elsif (defined($entry->{ipSubnet})) {
 			block_entry_by_ipprefs($entry);
 		} else {
 			syslog(LOG_ERR, "blockType is %s but no ip or ipSubnet entry ".
-			  "is found: %s", $entry->{__attrs}{blockType}, Dumper($entry));
+			  "is found: %s", $entry->{__ATTRS}{blockType}, Dumper($entry));
 		}
 	} else {
 		syslog(LOG_ERR, "unknown blockType: %s: %s",
-		  $entry->{__attrs}{blockType}, Dumper($entry));
-		return;
+		  $entry->{__ATTRS}{blockType}, Dumper($entry));
+		return 1;
 	}
+	
+	return 1;
 }
 
 sub block_entry_by_uris
 {
 	my ($entry) = @_;
-	my $array;
 	my $i;
 	
-	if (ref($entry->{url}) eq "ARRAY") {
-		$array = $entry->{url};
-	} elsif (ref($entry->{url}) eq "HASH") {
-		$array = [$entry->{url}];
-	} else {
-		syslog(LOG_ERR, "url key unknown type: %s: %s",
-		  ref($entry->{url}), Dumper($entry));
-		return -1;
-	}
-	
-	foreach $i (@$array) {
-		if (block_entry_by_uri($i->{__text}) == 1) {
+	foreach $i (@{$entry->{url}}) {
+		if (block_entry_by_uri($i->{__TEXT}) == 1) {
 			block_entry_by_ips($entry);
 		}
 	}
@@ -474,22 +465,11 @@ sub block_entry_by_uri
 sub block_entry_by_domains
 {
 	my ($entry) = @_;
-	my $array;
 	my $i;
 	my $ret;
 	
-	if (ref($entry->{domain}) eq "ARRAY") {
-		$array = $entry->{domain};
-	} elsif (ref($entry->{domain}) eq "HASH") {
-		$array = [$entry->{domain}];
-	} else {
-		syslog(LOG_ERR, "domain key unknown type: %s: %s",
-		  ref($entry->{domain}), Dumper($entry));
-		return -1;
-	}
-	
-	foreach $i (@$array) {
-		$ret = db_add("domain", URI::_idna::encode(lc($i->{__text})));
+	foreach $i (@{$entry->{domain}}) {
+		$ret = db_add("domain", URI::_idna::encode(lc($i->{__TEXT})));
 		return $ret if ($ret < 0);
 	}
 	
@@ -499,26 +479,15 @@ sub block_entry_by_domains
 sub block_entry_by_domainmasks
 {
 	my ($entry) = @_;
-	my $array;
 	my $i;
 	my $str;
 	my $ret;
 	
-	if (ref($entry->{domain}) eq "ARRAY") {
-		$array = $entry->{domain};
-	} elsif (ref($entry->{domain}) eq "HASH") {
-		$array = [$entry->{domain}];
-	} else {
-		syslog(LOG_ERR, "domain key unknown type: %s: %s",
-		  ref($entry->{domain}), Dumper($entry));
-		return -1;
-	}
-	
-	foreach $i (@$array) {
-		$str = $i->{__text};
+	foreach $i (@{$entry->{domain}}) {
+		$str = $i->{__TEXT};
 		if (substr($str, 0, 2) ne '*.') {
 			syslog(LOG_ERR, "domain-mask entry not started with '*.': %s",
-			  $i->{__text});
+			  $i->{__TEXT});
 			return -1;
 		}
 		$str = substr($str, 2);
@@ -532,22 +501,11 @@ sub block_entry_by_domainmasks
 sub block_entry_by_ips
 {
 	my ($entry) = @_;
-	my $array;
 	my $i;
 	my $ret;
 	
-	if (ref($entry->{ip}) eq "ARRAY") {
-		$array = $entry->{ip};
-	} elsif (ref($entry->{ip}) eq "HASH") {
-		$array = [$entry->{ip}];
-	} else {
-		syslog(LOG_ERR, "ip key unknown type: %s: %s",
-		  ref($entry->{ip}), Dumper($entry));
-		return -1;
-	}
-	
-	foreach $i (@$array) {
-		$ret = db_add("ip-srv", $i->{__text});
+	foreach $i (@{$entry->{ip}}) {
+		$ret = db_add("ip-srv", $i->{__TEXT});
 		return $ret if ($ret < 0);
 	}
 	
@@ -557,22 +515,11 @@ sub block_entry_by_ips
 sub block_entry_by_ipprefs
 {
 	my ($entry) = @_;
-	my $array;
 	my $i;
 	my $ret;
 	
-	if (ref($entry->{ipSubnet}) eq "ARRAY") {
-		$array = $entry->{ipSubnet};
-	} elsif (ref($entry->{ipSubnet}) eq "HASH") {
-		$array = [$entry->{ipSubnet}];
-	} else {
-		syslog(LOG_ERR, "ipSubnet key unknown type: %s: %s",
-		  ref($entry->{ipSubnet}), Dumper($entry));
-		return -1;
-	}
-	
-	foreach $i (@$array) {
-		$ret = db_add("ip-srv", $i->{__text});
+	foreach $i (@{$entry->{ipSubnet}}) {
+		$ret = db_add("ip-srv", $i->{__TEXT});
 		return $ret if ($ret < 0);
 	}
 	
@@ -786,13 +733,9 @@ sub main
 	
 	syslog(LOG_INFO, "processing");
 	foreach my $file (@$files) {
-		$xmlp = new rknr_xmlp(file => $file);
-	
-		$ret = $xmlp->xml_parse();
-	
-		foreach $entry (@{$ret->{data}{"reg:register"}{content}}) {
-			block_entry($entry);
-		}
+		$xmlp = new rknr_xmlp(file => $file,
+		  cb => {"/reg:register/content" => \&block_entry});
+		$xmlp->xml_parse();
 	}
 	
 	postwork();

@@ -17,7 +17,7 @@ my $conf = {};
 #
 my $file;
 my $act_hdlr;
-my $registry;
+my $xmlp;
 
 
 sub report_err
@@ -66,18 +66,10 @@ sub proc_opts
 sub _show_entry_fields
 {
 	my ($f) = @_;
-	my $a;
 	my $i;
 	
-	if (ref($f) eq "ARRAY") {
-		$a = $f;
-	} elsif (ref($f) eq "HASH") {
-		$a = [$f];
-	} else {
-		die("key unknown type: %s: %s", ref($f), Dumper($f));
-	}
-	foreach $i (@$a) {
-		printf("  %s\n", $i->{__text});
+	foreach $i (@$f) {
+		printf("  %s\n", $i->{__TEXT});
 	}
 }
 
@@ -87,15 +79,15 @@ sub show_entry
 	my @keys;
 	my $i;
 	
-	@keys = keys(%{$entry->{__attrs}});
+	@keys = keys(%{$entry->{__ATTRS}});
 	foreach $i (@keys) {
-		printf("  %s=%s\n", $i, $entry->{__attrs}{$i}); 
+		printf("  %s=%s\n", $i, $entry->{__ATTRS}{$i}); 
 	}
 
 	print("decision: ");
-	@keys = keys(%{$entry->{decision}{__attrs}});
+	@keys = keys(%{$entry->{decision}[0]{__ATTRS}});
 	foreach $i (@keys) {
-		printf("%s=%s ", $i, $entry->{decision}{__attrs}{$i}); 
+		printf("%s=%s ", $i, $entry->{decision}[0]{__ATTRS}{$i}); 
 	}
 	print("\n");
 
@@ -122,35 +114,51 @@ sub show_entry
 
 sub show_head
 {
+	my ($file) = @_;
+	my $xmlp;
+	
+	$xmlp = new rknr_xmlp(file => $file,
+	  cb => {"/reg:register" => \&_show_head,
+	    "/reg:register/content" => sub { return 1}});
+	$xmlp->xml_parse();
+}
+
+sub _show_head
+{
+	my ($entry) = @_;
 	my @keys;
 	my $i;
 	
-	@keys = keys(@{$registry->{data}{"reg:register"}{__attrs}});
+	@keys = keys(%{$entry->{__ATTRS}});
 	foreach $i (@keys) {
-		printf("%s=%s ", $i, $registry->{data}{"reg:register"}{__attrs}{$i});
+		printf("%s=%s\n", $i, $entry->{__ATTRS}{$i});
 	}
 	printf("\n");
+	
+	return 1;
 }
 
 sub show_by_id
 {
-	my ($id) = @_;
-	my $entry;
+	my ($file, $id) = @_;
+	my $xmlp;
 
-	foreach $entry (@{$registry->{data}{"reg:register"}{content}}) {
-		if ($entry->{__attrs}{id} eq $id) {
-			show_entry($entry);
-		}
-	}
+	$xmlp = new rknr_xmlp(file => $file,
+	  cb => {"/reg:register/content" => sub {
+	    return _show_by_id($id, @_)}});
+	$xmlp->xml_parse();
 }
 
-sub xml_load
+sub _show_by_id
 {
-	my ($file) = @_;
-	my $xmlp;
+	my ($id, $entry) = @_;
 	
-	$xmlp = new rknr_xmlp(file => $file);
-	return $xmlp->xml_parse();
+	if ($entry->{__ATTRS}{id} eq $id) {
+		show_entry($entry);
+		return 2;
+	}
+	
+	return 1;
 }
 
 sub get_file
@@ -188,5 +196,4 @@ proc_opts();
 
 $file = get_file(shift(@ARGV));
 $act_hdlr = get_action(shift(@ARGV));
-$registry = xml_load($file);
-&$act_hdlr(@ARGV);
+&$act_hdlr($file, @ARGV);

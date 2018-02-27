@@ -98,65 +98,41 @@ sub parse_entry
 {
 	my ($entry) = @_;
 	
-	if (!defined($entry->{__attrs}{blockType})) {
-		$entry->{__attrs}{blockType} = "default";
+	if (!defined($entry->{__ATTRS}{blockType})) {
+		$entry->{__ATTRS}{blockType} = "default";
 	}
-	parse_url($entry);
-	parse_domain($entry);
-	parse_ip($entry);
-	parse_ipsubnet($entry);
+#	parse_url($entry);
+#	parse_domain($entry);
+#	parse_ip($entry);
+#	parse_ipsubnet($entry);
 }
 
 sub parse_url
 {
-	my $entry = shift;
-	my $d;
-	
-	$d = $entry->{url};
-	if (defined($d) && (ref($d) eq "HASH")) {
-		$entry->{url} = [$d];
-	} elsif (defined($d) && (ref($d) ne "ARRAY")) {
-		die("url is not ARRAY!\n".Dumper($entry));
-	}
+	my ($entry) = @_;
+
+	return unless(defined($entry->{url}));	
 }
 
 sub parse_domain
 {
-	my $entry = shift;
-	my $d;
-	
-	$d = $entry->{domain};
-	if (defined($d) && (ref($d) eq "HASH")) {
-		$entry->{domain} = [$d];
-	} elsif (defined($d) && (ref($d) ne "ARRAY")) {
-		die("domain is not ARRAY!\n".Dumper($entry));
-	}
+	my ($entry) = @_;
+
+	return unless(defined($entry->{domain}));	
 }
 
 sub parse_ip
 {
-	my $entry = shift;
-	my $d;
-	
-	$d = $entry->{ip};
-	if (defined($d) && (ref($d) eq "HASH")) {
-		$entry->{ip} = [$d];
-	} elsif (defined($d) && (ref($d) ne "ARRAY")) {
-		die("ip is not ARRAY!\n".Dumper($entry));
-	}
+	my ($entry) = @_;
+
+	return unless(defined($entry->{ip}));	
 }
 
 sub parse_ipsubnet
 {
-	my $entry = shift;
-	my $d;
-	
-	$d = $entry->{ipsubnet};
-	if (defined($d) && (ref($d) eq "HASH")) {
-		$entry->{ipsubnet} = [$d];
-	} elsif (defined($d) && (ref($d) ne "ARRAY")) {
-		die("ipsubnet is not ARRAY!\n".Dumper($entry));
-	}
+	my ($entry) = @_;
+
+	return unless(defined($entry->{ipsubnet}));	
 }
 
 sub analyze_url
@@ -229,7 +205,7 @@ sub analyze_scheme
 		return;
 	}
 	foreach $i (@{$entry->{url}}) {
-		if ($i->{__text} !~ /^([^:]+):/io) {
+		if ($i->{__TEXT} !~ /^([^:]+):/io) {
 			die("Scheme not found: \n".Dumper($entry));
 		}
 		$scheme = lc($1);
@@ -263,12 +239,12 @@ sub analyze_blocktype
 {
 	my $entry = shift;
 	
-	if ((!defined($entry->{__attrs}{blockType})) ||
-	    ($entry->{__attrs}{blockType} eq "default")) {
+	if ((!defined($entry->{__ATTRS}{blockType})) ||
+	    ($entry->{__ATTRS}{blockType} eq "default")) {
 		$cnt->{blocktype}{default}++;
-	} elsif ($entry->{__attrs}{blockType} eq "domain") {
+	} elsif ($entry->{__ATTRS}{blockType} eq "domain") {
 		$cnt->{blocktype}{domain}++;
-	} elsif ($entry->{__attrs}{blockType} eq "ip") {
+	} elsif ($entry->{__ATTRS}{blockType} eq "ip") {
 		if (defined($entry->{ip})) {
 			$cnt->{blocktype}{ip}++;
 		} elsif (defined($entry->{ipSubnet})) {
@@ -277,7 +253,7 @@ sub analyze_blocktype
 			die("analyze blocktype error: blocktype ip, but no ip or ".
 			  "ipSubnet entry");
 		}
-	} elsif ($entry->{__attrs}{blockType} eq "domain-mask") {
+	} elsif ($entry->{__ATTRS}{blockType} eq "domain-mask") {
 		$cnt->{blocktype}{domain_mask}++;
 	}
 }
@@ -288,7 +264,7 @@ sub output_url
 	my $i;
 
 	foreach $i (@{$entry->{url}}) {
-		printf("%s\n", $i->{__text});
+		printf("%s\n", $i->{__TEXT});
 	}
 }
 
@@ -297,11 +273,11 @@ sub output_domain_all
 	my $entry = shift;
 	my $i;
 
-	if ($entry->{__attrs}{blockType} eq "domain-mask") {
+	if ($entry->{__ATTRS}{blockType} eq "domain-mask") {
 		return;
 	}
 	foreach $i (@{$entry->{domain}}) {
-		printf("%s\n", $i->{__text});
+		printf("%s\n", $i->{__TEXT});
 	}
 }
 
@@ -310,11 +286,11 @@ sub output_domain
 	my $entry = shift;
 	my $i;
 
-	if ($entry->{__attrs}{blockType} ne "domain") {
+	if ($entry->{__ATTRS}{blockType} ne "domain") {
 		return;
 	}
 	foreach $i (@{$entry->{domain}}) {
-		printf("%s\n", $i->{__text});
+		printf("%s\n", $i->{__TEXT});
 	}
 }
 
@@ -323,11 +299,11 @@ sub output_domain_mask
 	my $entry = shift;
 	my $i;
 
-	if ($entry->{__attrs}{blockType} ne "domain-mask") {
+	if ($entry->{__ATTRS}{blockType} ne "domain-mask") {
 		return;
 	}
 	foreach $i (@{$entry->{domain}}) {
-		printf("%s\n", $i->{__text});
+		printf("%s\n", $i->{__TEXT});
 	}
 }
 
@@ -337,7 +313,7 @@ sub output_ip
 	my $i;
 
 	foreach $i (@{$entry->{ip}}) {
-		printf("%s\n", $i->{__text});
+		printf("%s\n", $i->{__TEXT});
 	}
 }
 
@@ -347,7 +323,7 @@ sub output_ipsubnet
 	my $i;
 
 	foreach $i (@{$entry->{ipSubnet}}) {
-		printf("%s\n", $i->{__text});
+		printf("%s\n", $i->{__TEXT});
 	}
 }
 
@@ -398,39 +374,45 @@ sub main
 {
 	my ($url, $domain, $ip, $ipsubnet);
 	
-	$xmlp = new rknr_xmlp(file => $dump_file);
-	$ret = $xmlp->xml_parse();
+	$xmlp = new rknr_xmlp(file => $dump_file,
+	  cb => {"/reg:register/content" => \&_proc_entry});
+	$xmlp->xml_parse();
 
-	foreach $entry (@{$ret->{data}{"reg:register"}{content}}) {
-		parse_entry($entry);
-		if ($opt_u_out) {
-			output_url($entry);
-		} elsif ($opt_d_all_out) {
-			output_domain_all($entry);
-		} elsif ($opt_d_out) {
-			output_domain($entry);
-		} elsif ($opt_dm_out) {
-			output_domain_mask($entry);
-		} elsif ($opt_ip_out) {
-			output_ip($entry);
-		} elsif ($opt_ipsubnet_out) {
-			output_ipsubnet($entry);
-		} else {
-			$cnt->{total}++;
-			analyze_url($entry);
-			analyze_domain($entry);
-			analyze_ip($entry);
-			analyze_ipsubnet($entry);
-			analyze_scheme($entry);
-			analyze_combinations($entry);
-			analyze_blocktype($entry);
-		}
-	}
-	
 	if ((!$opt_u_out) && (!$opt_d_all_out) && (!$opt_d_out) && (!$opt_ip_out) &&
 	    (!$opt_ipsubnet_out) && (!$opt_dm_out)) {
 		output_stat();
 	}
+}
+
+sub _proc_entry
+{
+	my ($entry) = @_;
+	
+	parse_entry($entry);
+	if ($opt_u_out) {
+		output_url($entry);
+	} elsif ($opt_d_all_out) {
+		output_domain_all($entry);
+	} elsif ($opt_d_out) {
+		output_domain($entry);
+	} elsif ($opt_dm_out) {
+		output_domain_mask($entry);
+	} elsif ($opt_ip_out) {
+		output_ip($entry);
+	} elsif ($opt_ipsubnet_out) {
+		output_ipsubnet($entry);
+	} else {
+		$cnt->{total}++;
+		analyze_url($entry);
+		analyze_domain($entry);
+		analyze_ip($entry);
+		analyze_ipsubnet($entry);
+		analyze_scheme($entry);
+		analyze_combinations($entry);
+		analyze_blocktype($entry);
+	}
+
+	return 1;
 }
 
 
