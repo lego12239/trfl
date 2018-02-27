@@ -41,7 +41,7 @@ sub output_help
 
 sub output_version
 {
-	print("rknr_show.pl 0-1.0\n");
+	print("rknr_show.pl 0-1.1\n");
 }
 
 sub proc_opts
