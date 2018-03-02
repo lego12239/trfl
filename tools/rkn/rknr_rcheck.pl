@@ -110,6 +110,9 @@ sub load_rdata
 		$is_body++ if (($row->[0] eq "") || ($is_body >= 0));
 		last if ($is_body == 2);
 	}
+	if ($csv->eof()) {
+		return;
+	}
 	if ((0 + $csv->error_diag())) {
 		die("$file: ".$csv->error_diag());
 	}
@@ -339,6 +342,7 @@ binmode(STDOUT, ":utf8");
 proc_opts();
 
 load_rdata(shift(@ARGV));
+exit(0) unless (%$data);
 @files = get_files_list(@ARGV);
 collect_info(@files);
 show_info();
