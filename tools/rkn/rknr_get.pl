@@ -371,14 +371,18 @@ sub block_entry
 			block_entry_by_uris($entry);
 		} elsif (defined($entry->{domain})) {
 			block_entry_by_domains($entry);
-		} elsif (defined($entry->{ip})) {
-			block_entry_by_ips($entry);
-		} elsif (defined($entry->{ipSubnet})) {
-			block_entry_by_ipprefs($entry);
 		} else {
-			syslog(LOG_ERR, "entry without uri, domain and ip: %s",
-			  Dumper($entry));
-			return 1;
+			if (defined($entry->{ip})) {
+				block_entry_by_ips($entry);
+			}
+			if (defined($entry->{ipSubnet})) {
+				block_entry_by_ipprefs($entry);
+			}
+			if ((!defined($entry->{ip})) && (!defined($entry->{ipSubnet}))) {
+				syslog(LOG_ERR, "entry without uri, domain and ip: %s",
+				  Dumper($entry));
+				return 1;
+			}
 		}
 	} elsif ($entry->{__ATTRS}{blockType} eq "domain") {
 		block_entry_by_domains($entry);
@@ -387,9 +391,11 @@ sub block_entry
 	} elsif ($entry->{__ATTRS}{blockType} eq "ip") {
 		if (defined($entry->{ip})) {
 			block_entry_by_ips($entry);
-		} elsif (defined($entry->{ipSubnet})) {
+		}
+		if (defined($entry->{ipSubnet})) {
 			block_entry_by_ipprefs($entry);
-		} else {
+		}
+		if ((!defined($entry->{ip})) && (!defined($entry->{ipSubnet}))) {
 			syslog(LOG_ERR, "blockType is %s but no ip or ipSubnet entry ".
 			  "is found: %s", $entry->{__ATTRS}{blockType}, Dumper($entry));
 		}
