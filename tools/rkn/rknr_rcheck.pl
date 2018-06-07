@@ -7,14 +7,17 @@ use URI;
 use URI::_idna;
 use Cwd;
 use Text::CSV;
+use utf8;
 use Data::Dumper;
 
 
 my $data = {};
 my @files;
+my @ftimes;
 my $opt_verbose = 0;
 my $opt_rdetails = 0;
 my $opt_details = 0;
+my $opt_hidefalse = 0;
 
 
 sub report_err
@@ -33,6 +36,7 @@ sub output_help
 	  " -h, --help            show help\n".
 	  " -V, --version         show program version\n".
 	  " -v, --verbose         show progress info\n".
+	  " -h, --hide-false      hide false fails\n".
 	  " -s, --show-rdetails   show revizor failure details\n".
 	  " -S, --show-details    show register entry details\n".
 	  "REVIZOR_REPORT         csv report file\n".
@@ -53,6 +57,7 @@ sub proc_opts
 	GetOptions('help|h' => \$opt_h,
 	  'version|V' => \$opt_V,
 	  'verbose|v' => \$opt_verbose,
+	  'hide-false' => \$opt_hidefalse,
 	  'show-rdetails|s' => \$opt_rdetails,
 	  'show-details|S' => \$opt_details);
 
@@ -155,6 +160,16 @@ sub get_files_list
 	@sorted = sort(@files);
 	
 	return @sorted;
+}
+
+sub analyze_prepare
+{
+	my $i;
+	
+	push(@ftimes, @files);
+	foreach $i (@ftimes) {
+		$i =~ s/^.*(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})$/$1/o;
+	}
 }
 
 sub collect_info
@@ -260,27 +275,109 @@ sub show_info
 	my @ids;
 	my $id;
 	my $i;
+	my $f;
 	
 	@ids = keys(%$data);
 	foreach $id (@ids) {
-		printf("%s\n  failures:\n", $id);
-		foreach $i (@{$data->{$id}{rchecks}}) {
-			printf("    %s\n", $i->{time});
-			if ($opt_rdetails) {
-				printf("      %s (%s, %s)\n", $i->{req}, $i->{http_code},
-				  $i->{http_redir});
+		analyze($data->{$id});
+		if ($opt_hidefalse) {
+			$f = 1;
+			for $i (@{$data->{$id}{rchecks}}) {
+				$f = 0 if (!$i->{_is_false});
 			}
+			next if ($f);
 		}
-		printf("\n  registries:\n");
-		foreach $i (@{$data->{$id}{regs}}) {
-			printf("    %s %s\n", $i->{file}{name},
-			  $i->{file}{exist} ? "PRESENT": "absent");
-			if ($opt_details) {
-				show_entry($i->{entry});
+		printf("%s\n", $id);
+		foreach $i (@{$data->{$id}{etl}}) {
+			printf("  %s  %s:%s\n", $i->{time}, $i->{type},
+			  join(",", @{$i->{flags}}));
+			if ($opt_verbose) {
+				printf("    %s\n", $i->{title});
+			}
+			if (($opt_rdetails) && ($i->{type} eq "c")) {
+				printf("    %s (%s, %s)\n", $i->{e}{req}, $i->{e}{http_code},
+				  $i->{e}{http_redir});
+			}
+			if (($opt_details) && ($i->{type} eq "r")) {
+				show_entry($i->{e}{entry});
 			}
 		}
 		printf("\n\n");
 	}
+}
+
+sub analyze
+{
+	my ($dentry) = @_;
+	my @states; # 0 - INITIAL, 1 - ABSENT, 2 - PRESENT, 3 - CHECK_FAIL
+	my $state;
+	my $e;
+	my $t;
+	my $i;
+	my $j;
+	
+	for($i = 0; $i <= $#ftimes; $i++) {
+		$dentry->{etl}[$i] = {
+			title => $dentry->{regs}[$i]{file}{name},
+			time => $ftimes[$i],
+			type => "r",
+			e => $dentry->{regs}[$i],
+			flags => [$dentry->{regs}[$i]{file}{exist} ? "PRESENT" :
+			  "absent"]};
+	}
+	foreach $i (@{$dentry->{rchecks}}) {
+		$i->{_is_false} = 0;
+		$t = _rtime2iso($i->{time});
+		@states = (0);
+		for($j = 0; $j <= $#ftimes; $j++) {
+			if ($dentry->{regs}[$j]{file}{exist}) {
+				$state = 2;
+			} else {
+				$state = 1;
+			}
+			if ($states[0] != $state) {
+				# use reverse order just for simplicity
+				unshift(@states, $state);
+			}
+			if ($ftimes[$j] le $t) {
+				if ($j == $#ftimes) {
+					unshift(@states, 3);
+				} elsif ($ftimes[$j+1] gt $t) {
+					unshift(@states, 3);
+				}
+			}
+		}
+		$e = {
+			title => $i->{time},
+			time => $t,
+			type => "c",
+			e => $i,
+			flags => ["fail"]};
+		$state = join(",", reverse(@states));
+		if (($state eq "0,2,3,1") ||
+		    ($state eq "0,2,1,3,1") ||
+		    ($state eq "0,2,1,3")) {
+			push(@{$e->{flags}}, "FALSE");
+			$i->{_is_false} = 1;
+		}
+		push(@{$dentry->{etl}}, $e);
+	}
+	
+	@states = sort {$a->{time} cmp $b->{time}} @{$dentry->{etl}};
+	$dentry->{etl} = [@states];
+}
+
+sub _rtime2iso
+{
+	my ($rtime) = @_;
+	my %mon = ("Янв" => "01", "Фев" => "02", "Мар" => "03", "Апр" => "04",
+	  "Май" => "05", "Июн" => "06", "Июл" => "07", "Авг" => "08",
+	  "Сен" => "09", "Окт" => "10", "Ноя" => "11", "Дек" => "12");
+	
+	if ($rtime !~ /^(\d{2})\s+(\S{3}),\s+(\d{4})\s+(\d{2}):(\d{2}):\d{2}$/o) {
+		die("rtime2iso: date time format error: $rtime");
+	}
+	return $3."-".$mon{$2}."-".$1."T".$4.":".$5;
 }
 
 sub show_entry
@@ -291,10 +388,10 @@ sub show_entry
 	
 	@keys = keys(%{$entry->{__ATTRS}});
 	foreach $i (@keys) {
-		printf("      %s=%s\n", $i, $entry->{__ATTRS}{$i}); 
+		printf("    %s=%s\n", $i, $entry->{__ATTRS}{$i}); 
 	}
 
-	print("      decision: ");
+	print("    decision: ");
 	@keys = keys(%{$entry->{decision}[0]{__ATTRS}});
 	foreach $i (@keys) {
 		printf("%s=%s ", $i, $entry->{decision}[0]{__ATTRS}{$i}); 
@@ -302,22 +399,22 @@ sub show_entry
 	print("\n");
 
 	if (defined($entry->{url})) {
-		print("      url:\n");
+		print("    url:\n");
 		_show_entry_fields($entry->{url});
 	}
 
 	if (defined($entry->{domain})) {
-		print("      domain:\n");
+		print("    domain:\n");
 		_show_entry_fields($entry->{domain});
 	}
 
 	if (defined($entry->{ip})) {
-		print("      ip:\n");
+		print("    ip:\n");
 		_show_entry_fields($entry->{ip});
 	}
 
 	if (defined($entry->{ipSubnet})) {
-		print("      ipSubnet:\n");
+		print("    ipSubnet:\n");
 		_show_entry_fields($entry->{ipSubnet});
 	}
 }
@@ -328,7 +425,7 @@ sub _show_entry_fields
 	my $i;
 	
 	foreach $i (@$f) {
-		printf("        %s\n", $i->{__TEXT});
+		printf("      %s\n", $i->{__TEXT});
 	}
 }
 
@@ -344,5 +441,6 @@ proc_opts();
 load_rdata(shift(@ARGV));
 exit(0) unless (%$data);
 @files = get_files_list(@ARGV);
+analyze_prepare(@files);
 collect_info(@files);
 show_info();
