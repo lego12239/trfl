@@ -10,7 +10,7 @@ use URI;
 use URI::_idna;
 use Cwd;
 use Data::Dumper;
-
+#use Devel::NYTProf;
 
 my $conf = {
 	SOAP_URI => undef,
@@ -122,11 +122,6 @@ sub db_add
 		return -1;
 	}
 	$rec = $csv->string();
-	if (defined($db->{$type})) {
-		foreach $i (@{$db->{$type}}) {
-			return 0 if ($i eq $rec);
-		}
-	}
 	push(@{$db->{$type}}, $rec);
 	
 	return 0;
@@ -329,11 +324,17 @@ sub postwork
 		}
 	}
 	close($fh_tf);
+
+	system("sort $tf_list_path | uniq > ".$tf_list_path.".sorted");
+	unless (unlink($tf_list_path)) {
+		die("Can't remove tf_list temp file: ".$!);
+	}
+	
 	@types = localtime(time());
 	$postfix = sprintf(".%04d-%02d-%02dT%02d:%02d", 
 	  $types[5] + 1900, $types[4] + 1, $types[3], $types[2], $types[1]);
 	$type = $conf->{BACKUPDIR}."/tf_list".$postfix;
-	unless (rename($tf_list_path, $type)) {
+	unless (rename($tf_list_path.".sorted", $type)) {
 		die("Can't rename tf_list temp file to ".$type.": ".$!);
 	}
 	unless (unlink($opt_out)) {
